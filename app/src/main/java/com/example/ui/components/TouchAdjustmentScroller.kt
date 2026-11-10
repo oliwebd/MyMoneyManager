@@ -2,6 +2,8 @@ package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -19,14 +21,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.UnfoldMore
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,58 +42,65 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 @Composable
 fun TouchAdjustmentScroller(
   currentAmount: Double,
   onAmountChanged: (Double) -> Unit,
   modifier: Modifier = Modifier,
-  accentColor: Color = MaterialTheme.colorScheme.primary
+  accentColor: Color = Color(0xFFFF334B)
 ) {
   var dragAccumulator by remember { mutableFloatStateOf(0f) }
   var isDragging by remember { mutableStateOf(false) }
 
-  val trackColor by animateColorAsState(
-    targetValue = if (isDragging) accentColor.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceVariant,
-    label = "trackColor"
-  )
+  val pillBackground = Color(0xFF23242A)
+  val infoCardBackground = Color(0xFF1B1C22)
 
   Column(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Quick Step Buttons Row
+    // Stepper Controls & Touch Cylinder Row
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 4.dp),
+        .padding(horizontal = 2.dp),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      StepChip(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
-      StepChip(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
-      StepChip(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
+      // Negative steps
+      DarkStepPill(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
+      DarkStepPill(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
+      DarkStepPill(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
 
-      // Vertical Touch Scroll Wheel / Drag Handle
-      Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = trackColor,
-        tonalElevation = 2.dp,
+      // Center Neon Touch Cylinder
+      Box(
         modifier = Modifier
-          .width(72.dp)
-          .height(52.dp)
+          .width(82.dp)
+          .height(58.dp)
+          .clip(RoundedCornerShape(22.dp))
+          .background(
+            if (isDragging) accentColor.copy(alpha = 0.28f) else accentColor.copy(alpha = 0.16f)
+          )
+          .border(
+            width = 1.6.dp,
+            color = accentColor,
+            shape = RoundedCornerShape(22.dp)
+          )
           .draggable(
             orientation = Orientation.Vertical,
             state = rememberDraggableState { delta ->
               isDragging = true
               // Invert delta: dragging up increases amount, dragging down decreases
               dragAccumulator -= delta
-              val stepThreshold = 8f // pixels per $1
+              val stepThreshold = 8f // 8px per $1 step
               if (abs(dragAccumulator) >= stepThreshold) {
                 val steps = (dragAccumulator / stepThreshold).toInt()
                 val newAmount = maxOf(0.0, currentAmount + steps)
@@ -105,85 +113,166 @@ fun TouchAdjustmentScroller(
               dragAccumulator = 0f
             }
           )
-          .testTag("amount_touch_scroller")
+          .clickable {
+            // Tap adds $1
+            onAmountChanged(currentAmount + 1.0)
+          }
+          .testTag("amount_touch_scroller"),
+        contentAlignment = Alignment.Center
       ) {
         Column(
-          modifier = Modifier.padding(4.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.Center
         ) {
           Icon(
             imageVector = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Scroll up to increase",
+            contentDescription = "Step up",
             tint = accentColor,
             modifier = Modifier.size(16.dp)
           )
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-          ) {
-            Icon(
-              imageVector = Icons.Default.UnfoldMore,
-              contentDescription = "Touch scroller drag handle",
-              tint = accentColor,
-              modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(2.dp))
-            Text(
-              text = "Touch",
-              style = MaterialTheme.typography.labelSmall,
-              fontWeight = FontWeight.Bold,
-              fontSize = 9.sp,
-              color = accentColor
-            )
-          }
+          Text(
+            text = "Touch",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = accentColor
+          )
           Icon(
             imageVector = Icons.Default.KeyboardArrowDown,
-            contentDescription = "Scroll down to decrease",
+            contentDescription = "Step down",
             tint = accentColor,
             modifier = Modifier.size(16.dp)
           )
         }
       }
 
-      StepChip(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
-      StepChip(label = "+10", onClick = { onAmountChanged(currentAmount + 10) })
-      StepChip(label = "+100", onClick = { onAmountChanged(currentAmount + 100) })
+      // Positive steps
+      DarkStepPill(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
+
+      // Vertical Stepper Pill (+ 10 -)
+      Box(
+        modifier = Modifier
+          .width(42.dp)
+          .height(58.dp)
+          .clip(RoundedCornerShape(16.dp))
+          .background(pillBackground)
+          .testTag("step_vertical_10"),
+        contentAlignment = Alignment.Center
+      ) {
+        Column(
+          modifier = Modifier.padding(vertical = 2.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.SpaceBetween
+        ) {
+          Box(
+            modifier = Modifier
+              .size(24.dp)
+              .clickable { onAmountChanged(currentAmount + 10) },
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Add,
+              contentDescription = "+10",
+              tint = Color(0xFFC0C0CC),
+              modifier = Modifier.size(14.dp)
+            )
+          }
+          Text(
+            text = "10",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            color = Color.White
+          )
+          Box(
+            modifier = Modifier
+              .size(24.dp)
+              .clickable { onAmountChanged(maxOf(0.0, currentAmount - 10)) },
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Remove,
+              contentDescription = "-10",
+              tint = Color(0xFFC0C0CC),
+              modifier = Modifier.size(14.dp)
+            )
+          }
+        }
+      }
     }
 
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(
-      text = "Drag touch cylinder up/down or tap steps for micro-adjustment",
-      style = MaterialTheme.typography.labelSmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      fontSize = 11.sp
-    )
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // Info Hint Banner Matching Image 2
+    Surface(
+      shape = RoundedCornerShape(18.dp),
+      color = infoCardBackground,
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          imageVector = Icons.Default.Info,
+          contentDescription = null,
+          tint = Color(0xFF8E8E98),
+          modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+          text = buildAnnotatedString {
+            append("Drag the cylinder up/down or tap steps for ")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
+              append("micro-adjustment")
+            }
+          },
+          style = MaterialTheme.typography.bodySmall,
+          color = Color(0xFFA0A0AF),
+          fontSize = 11.5.sp,
+          modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Box(
+          modifier = Modifier
+            .width(1.dp)
+            .height(24.dp)
+            .background(Color(0x22FFFFFF))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Icon(
+          imageVector = Icons.Default.TouchApp,
+          contentDescription = "Swipe up or down gesture",
+          tint = accentColor,
+          modifier = Modifier.size(22.dp)
+        )
+      }
+    }
   }
 }
 
 @Composable
-private fun StepChip(
+private fun DarkStepPill(
   label: String,
   onClick: () -> Unit
 ) {
-  Surface(
-    shape = RoundedCornerShape(12.dp),
-    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+  Box(
     modifier = Modifier
-      .clip(RoundedCornerShape(12.dp))
+      .clip(RoundedCornerShape(16.dp))
+      .background(Color(0xFF23242A))
+      .clickable(onClick = onClick)
+      .padding(horizontal = 11.dp, vertical = 14.dp)
       .testTag("step_chip_$label"),
-    onClick = onClick
+    contentAlignment = Alignment.Center
   ) {
-    Box(
-      modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-      contentAlignment = Alignment.Center
-    ) {
-      Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-      )
-    }
+    Text(
+      text = label,
+      style = MaterialTheme.typography.labelMedium,
+      fontWeight = FontWeight.Bold,
+      color = Color.White,
+      fontSize = 13.sp
+    )
   }
 }
