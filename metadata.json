@@ -1,6 +1,6 @@
 {
-  "name": "myMoneymanager",
-  "description": "Secure income & expense tracker with data visualization charts, monthly budget goals, biometric lock, and encrypted backups.",
+  "name": "M3Note",
+  "description": "M3Note (MyMoneyManager) - Secure income & expense tracker with charts, budget goals, biometric lock, and encrypted backups.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

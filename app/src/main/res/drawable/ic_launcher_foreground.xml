@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/pocketsense_icon_1794001688884"
+        android:drawable="@drawable/m3note_icon_1794329214180"
         android:gravity="center" />
 </layer-list>

@@ -93,11 +93,16 @@ fun TransactionsScreen(
       FloatingActionButton(
         onClick = onOpenAddTransaction,
         containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = Color.White,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = CircleShape,
         modifier = Modifier.testTag("fab_add_transaction")
       ) {
-        Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+        Icon(
+          imageVector = Icons.Default.Add,
+          contentDescription = "Add Transaction",
+          tint = MaterialTheme.colorScheme.onPrimary,
+          modifier = Modifier.size(28.dp)
+        )
       }
     },
     modifier = modifier.fillMaxSize()

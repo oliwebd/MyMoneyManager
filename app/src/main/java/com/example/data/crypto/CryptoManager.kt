@@ -30,7 +30,8 @@ data class BackupData(
 )
 
 object CryptoManager {
-  private const val MAGIC_HEADER = "MYMONEYMANAGER_ENC_V1"
+  private const val MAGIC_HEADER = "M3NOTE_ENC_V1"
+  private const val LEGACY_HEADER_MYMONEYMANAGER = "MYMONEYMANAGER_ENC_V1"
   private const val LEGACY_HEADER_EXPENSEWISE = "EXPENSEWISE_ENC_V1"
   private const val LEGACY_HEADER_POCKETSENSE = "POCKETSENSE_ENC_V1"
   private const val SALT_LENGTH = 16
@@ -78,7 +79,12 @@ object CryptoManager {
    * Decrypts AES-256-GCM encrypted backup byte array using user passphrase.
    */
   fun decryptBackup(encryptedBytes: ByteArray, passphrase: CharArray): BackupData {
-    val recognizedHeaders = listOf(MAGIC_HEADER, LEGACY_HEADER_EXPENSEWISE, LEGACY_HEADER_POCKETSENSE)
+    val recognizedHeaders = listOf(
+      MAGIC_HEADER,
+      LEGACY_HEADER_MYMONEYMANAGER,
+      LEGACY_HEADER_EXPENSEWISE,
+      LEGACY_HEADER_POCKETSENSE
+    )
     var matchedHeader: String? = null
     var headerLength = 0
 
@@ -95,7 +101,7 @@ object CryptoManager {
     }
 
     if (matchedHeader == null) {
-      throw IllegalArgumentException("Invalid file format: Not a recognized myMoneymanager encrypted backup.")
+      throw IllegalArgumentException("Invalid file format: Not a recognized M3Note encrypted backup.")
     }
 
     var offset = headerLength

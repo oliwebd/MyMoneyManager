@@ -72,11 +72,12 @@ fun ExpenseWiseTheme(
 }
 
 @Composable
-fun PocketSenseTheme(
+fun M3NoteTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
   dynamicColor: Boolean = true,
   content: @Composable () -> Unit
 ) {
   MyMoneyManagerTheme(darkTheme, dynamicColor, content)
 }
+
 

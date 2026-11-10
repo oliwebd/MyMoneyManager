@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
@@ -80,6 +81,7 @@ fun BackupSettingsScreen(
   onExportEncrypted: (passphrase: CharArray, onReady: (Intent) -> Unit, onError: (String) -> Unit) -> Unit,
   onImportEncrypted: (uri: Uri, passphrase: CharArray, onSuccess: (Int) -> Unit, onError: (String) -> Unit) -> Unit,
   onTriggerTestNotification: () -> Unit,
+  onClearAllData: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -88,6 +90,7 @@ fun BackupSettingsScreen(
   var showImportDialog by remember { mutableStateOf(false) }
   var showChangePinDialog by remember { mutableStateOf(false) }
   var showCurrencyDialog by remember { mutableStateOf(false) }
+  var showClearDataDialog by remember { mutableStateOf(false) }
   var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
   var statusMessage by remember { mutableStateOf<String?>(null) }
 
@@ -287,6 +290,64 @@ fun BackupSettingsScreen(
       }
     }
 
+    // Data Management & Clean Reset
+    item {
+      Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .background(MaterialTheme.colorScheme.errorContainer, CircleShape),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Default.DeleteForever,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(22.dp)
+              )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+              Text(
+                text = "Data Management",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+              )
+              Text(
+                text = "Clean all pre-data or wipe database records",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(14.dp))
+
+          Button(
+            onClick = { showClearDataDialog = true },
+            colors = ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.error,
+              contentColor = MaterialTheme.colorScheme.onError
+            ),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth().testTag("clear_all_data_button")
+          ) {
+            Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Clear All Pre-Data & Transactions", fontWeight = FontWeight.Bold)
+          }
+        }
+      }
+    }
+
     // GDPR & Privacy Notice
     item {
       Card(
@@ -312,7 +373,7 @@ fun BackupSettingsScreen(
           }
           Spacer(modifier = Modifier.height(6.dp))
           Text(
-            text = "myMoneymanager operates 100% offline-first. Your financial entries, balances, and reports never leave your device unencrypted. Backups exported to Google Drive use client-side AES-256-GCM encryption with password key derivation (PBKDF2), ensuring zero-knowledge privacy.",
+            text = "M3Note operates 100% offline-first. Your financial entries, balances, and reports never leave your device unencrypted. Backups exported to Google Drive use client-side AES-256-GCM encryption with password key derivation (PBKDF2), ensuring zero-knowledge privacy.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
@@ -555,6 +616,43 @@ fun BackupSettingsScreen(
       confirmButton = {
         TextButton(onClick = { showCurrencyDialog = false }) {
           Text("Close")
+        }
+      }
+    )
+  }
+
+  // Clear All Data Confirmation Dialog
+  if (showClearDataDialog) {
+    AlertDialog(
+      onDismissRequest = { showClearDataDialog = false },
+      icon = {
+        Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+      },
+      title = { Text("Wipe All Data?") },
+      text = {
+        Text(
+          text = "This will erase all recorded transactions, budget limits, recurring alerts, and reset account balances to 0.0. This action cannot be undone unless you have an exported backup.",
+          style = MaterialTheme.typography.bodyMedium
+        )
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            showClearDataDialog = false
+            onClearAllData()
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError
+          ),
+          modifier = Modifier.testTag("confirm_wipe_data_button")
+        ) {
+          Text("Yes, Wipe All Data")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showClearDataDialog = false }) {
+          Text("Cancel")
         }
       }
     )

@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -117,7 +119,7 @@ fun DashboardScreen(
         Column {
           Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-              text = "myMoneymanager",
+              text = "M3Note",
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.onBackground
@@ -149,7 +151,7 @@ fun DashboardScreen(
             }
           }
           Text(
-            text = "Personal Financial Vault",
+            text = "MyMoneyManager Vault",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
@@ -259,6 +261,15 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val isDark = isSystemInDarkTheme()
+            val incomePillBg = if (isDark) Color(0xFF132B1C) else Color(0xFFE6F4EA)
+            val incomePillText = if (isDark) Color(0xFF81C995) else Color(0xFF137333)
+            val incomeIconBg = if (isDark) Color(0xFF0F9D58) else Color(0xFF0F9D58)
+
+            val expensePillBg = if (isDark) Color(0xFF3B1E1D) else Color(0xFFFCE8E6)
+            val expensePillText = if (isDark) Color(0xFFF28B82) else Color(0xFFC5221F)
+            val expenseIconBg = if (isDark) Color(0xFFEA4335) else Color(0xFFEA4335)
+
             // Income / Expense Dual Summary Pills
             Row(
               modifier = Modifier.fillMaxWidth(),
@@ -267,7 +278,7 @@ fun DashboardScreen(
               // Income Pill
               Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFE6F4EA),
+                color = incomePillBg,
                 modifier = Modifier.weight(1f)
               ) {
                 Row(
@@ -277,7 +288,7 @@ fun DashboardScreen(
                   Box(
                     modifier = Modifier
                       .size(32.dp)
-                      .background(Color(0xFF0F9D58), CircleShape),
+                      .background(incomeIconBg, CircleShape),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
@@ -292,13 +303,13 @@ fun DashboardScreen(
                     Text(
                       text = "Income",
                       style = MaterialTheme.typography.labelSmall,
-                      color = Color(0xFF137333)
+                      color = incomePillText
                     )
                     Text(
                       text = "$currencySymbol${String.format("%,.1f", totalIncome)}",
                       style = MaterialTheme.typography.bodyMedium,
                       fontWeight = FontWeight.Bold,
-                      color = Color(0xFF137333)
+                      color = incomePillText
                     )
                   }
                 }
@@ -307,7 +318,7 @@ fun DashboardScreen(
               // Expense Pill
               Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFFCE8E6),
+                color = expensePillBg,
                 modifier = Modifier.weight(1f)
               ) {
                 Row(
@@ -317,7 +328,7 @@ fun DashboardScreen(
                   Box(
                     modifier = Modifier
                       .size(32.dp)
-                      .background(Color(0xFFEA4335), CircleShape),
+                      .background(expenseIconBg, CircleShape),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
@@ -332,13 +343,13 @@ fun DashboardScreen(
                     Text(
                       text = "Expense",
                       style = MaterialTheme.typography.labelSmall,
-                      color = Color(0xFFC5221F)
+                      color = expensePillText
                     )
                     Text(
                       text = "$currencySymbol${String.format("%,.1f", totalExpense)}",
                       style = MaterialTheme.typography.bodyMedium,
                       fontWeight = FontWeight.Bold,
-                      color = Color(0xFFC5221F)
+                      color = expensePillText
                     )
                   }
                 }
@@ -355,21 +366,30 @@ fun DashboardScreen(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        FilledTonalButton(
+        Button(
           onClick = onOpenAddTransaction,
           shape = RoundedCornerShape(14.dp),
-          colors = ButtonDefaults.filledTonalButtonColors(
+          colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White
+            contentColor = MaterialTheme.colorScheme.onPrimary
           ),
           modifier = Modifier
-            .weight(1.2f)
+            .weight(1.3f)
             .height(48.dp)
             .testTag("quick_add_transaction_button")
         ) {
-          Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-          Spacer(modifier = Modifier.width(4.dp))
-          Text("Add Entry", fontWeight = FontWeight.Bold)
+          Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onPrimary
+          )
+          Spacer(modifier = Modifier.width(6.dp))
+          Text(
+            text = "+ Expense",
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary
+          )
         }
 
         FilledTonalButton(

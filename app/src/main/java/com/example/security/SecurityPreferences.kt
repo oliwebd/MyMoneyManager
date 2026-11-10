@@ -7,23 +7,22 @@ import java.security.SecureRandom
 
 class SecurityPreferences(context: Context) {
   private val prefs: SharedPreferences =
-    context.getSharedPreferences("pocketsense_security_prefs", Context.MODE_PRIVATE)
+    context.getSharedPreferences("m3note_security_prefs", Context.MODE_PRIVATE)
 
   companion object {
+    private const val KEY_SETUP_DONE = "initial_setup_done"
     private const val KEY_SECURITY_ENABLED = "security_enabled"
     private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
     private const val KEY_PIN_HASH = "pin_hash"
     private const val KEY_PIN_SALT = "pin_salt"
     private const val KEY_BASE_CURRENCY = "base_currency"
     private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
-    private const val DEFAULT_PIN = "123456" // Default 6-digit PIN for first-time convenience
   }
 
-  init {
-    // If not set yet, initialize default 6-digit PIN 123456 so user can test immediately
-    if (getPinHash() == null) {
-      setPin(DEFAULT_PIN)
-    }
+  fun isSetupDone(): Boolean = prefs.getBoolean(KEY_SETUP_DONE, false)
+
+  fun setSetupDone(done: Boolean) {
+    prefs.edit().putBoolean(KEY_SETUP_DONE, done).apply()
   }
 
   fun isSecurityEnabled(): Boolean = prefs.getBoolean(KEY_SECURITY_ENABLED, true)

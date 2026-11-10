@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "myMoneymanager"
+rootProject.name = "M3Note"
 
 include(":app")

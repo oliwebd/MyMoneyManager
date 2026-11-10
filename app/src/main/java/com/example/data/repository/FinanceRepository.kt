@@ -135,7 +135,7 @@ class FinanceRepository(
     )
 
     val encryptedBytes = CryptoManager.encryptBackup(data, passphrase)
-    val fileName = "mymoneymanager_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.mymoney"
+    val fileName = "m3note_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.m3note"
     val cacheDir = File(context.cacheDir, "backups")
     if (!cacheDir.exists()) cacheDir.mkdirs()
     val backupFile = File(cacheDir, fileName)
@@ -175,14 +175,27 @@ class FinanceRepository(
   }
 
   /**
+   * Cleans all transactions, budgets, alerts, and resets account balances to zero.
+   */
+  suspend fun clearAllData() = withContext(Dispatchers.IO) {
+    transactionDao.clearAll()
+    budgetDao.clearAll()
+    alertDao.clearAll()
+    val accounts = accountDao.getAllAccountsSnapshot()
+    for (acc in accounts) {
+      accountDao.updateAccount(acc.copy(balance = 0.0))
+    }
+  }
+
+  /**
    * Creates an intent to share the encrypted backup directly with Google Drive or any app.
    */
   fun createShareBackupIntent(fileUri: Uri): Intent {
     return Intent(Intent.ACTION_SEND).apply {
       type = "application/octet-stream"
       putExtra(Intent.EXTRA_STREAM, fileUri)
-      putExtra(Intent.EXTRA_SUBJECT, "myMoneymanager Encrypted Backup")
-      putExtra(Intent.EXTRA_TEXT, "Here is your AES-256 encrypted myMoneymanager financial backup. Store this safely in Google Drive.")
+      putExtra(Intent.EXTRA_SUBJECT, "M3Note Encrypted Backup")
+      putExtra(Intent.EXTRA_TEXT, "Here is your AES-256 encrypted M3Note financial backup. Store this safely in Google Drive.")
       addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
   }

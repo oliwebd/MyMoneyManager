@@ -77,7 +77,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     get() = SupportedCurrencies.find { it.code == _baseCurrency.value }?.symbol ?: "$"
 
   // Security Lock State
-  private val _isUnlocked = MutableStateFlow(!repository.securityPrefs.isSecurityEnabled())
+  private val _isSetupDone = MutableStateFlow(repository.securityPrefs.isSetupDone())
+  val isSetupDone: StateFlow<Boolean> = _isSetupDone.asStateFlow()
+
+  private val _isUnlocked = MutableStateFlow(
+    if (!repository.securityPrefs.isSetupDone()) false else !repository.securityPrefs.isSecurityEnabled()
+  )
   val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
   private val _securityEnabled = MutableStateFlow(repository.securityPrefs.isSecurityEnabled())
@@ -154,6 +159,27 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     if (_securityEnabled.value) {
       _isUnlocked.value = false
     }
+  }
+
+  fun completeInitialSecuritySetup(pin: String, enableBiometric: Boolean) {
+    repository.securityPrefs.setPin(pin)
+    repository.securityPrefs.setBiometricEnabled(enableBiometric)
+    repository.securityPrefs.setSecurityEnabled(true)
+    repository.securityPrefs.setSetupDone(true)
+    _isSetupDone.value = true
+    _isUnlocked.value = true
+    _securityEnabled.value = true
+    _biometricEnabled.value = enableBiometric
+    showMessage("Security setup complete. Welcome to M3Note!")
+  }
+
+  fun skipInitialSecuritySetup() {
+    repository.securityPrefs.setSecurityEnabled(false)
+    repository.securityPrefs.setSetupDone(true)
+    _isSetupDone.value = true
+    _isUnlocked.value = true
+    _securityEnabled.value = false
+    showMessage("Welcome to M3Note! Security can be configured anytime in Vault settings.")
   }
 
   fun setNewPin(newPin: String) {
@@ -386,6 +412,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
       Color(android.graphics.Color.parseColor(hex))
     } catch (_: Exception) {
       Color(0xFF1A73E8)
+    }
+  }
+
+  fun clearAllData() {
+    viewModelScope.launch {
+      repository.clearAllData()
+      showMessage("All data has been wiped clean.")
     }
   }
 

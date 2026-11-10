@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -105,7 +106,12 @@ fun AddTransactionSheet(
   var isRecurring by remember { mutableStateOf(false) }
   var recurringInterval by remember { mutableStateOf(RecurringInterval.MONTHLY) }
 
-  val accentColor = if (selectedType == TransactionType.INCOME) Color(0xFF0F9D58) else Color(0xFFEA4335)
+  val isDark = isSystemInDarkTheme()
+  val accentColor = if (selectedType == TransactionType.INCOME) {
+    if (isDark) Color(0xFF2EBD6E) else Color(0xFF0F9D58)
+  } else {
+    if (isDark) Color(0xFFE25241) else Color(0xFFEA4335)
+  }
 
   fun updateAmount(newVal: Double) {
     val rounded = String.format("%.2f", newVal)
@@ -155,7 +161,7 @@ fun AddTransactionSheet(
         val expenseSelected = selectedType == TransactionType.EXPENSE
         Surface(
           shape = RoundedCornerShape(12.dp),
-          color = if (expenseSelected) Color(0xFFEA4335) else Color.Transparent,
+          color = if (expenseSelected) accentColor else Color.Transparent,
           modifier = Modifier
             .weight(1f)
             .clip(RoundedCornerShape(12.dp))
@@ -170,14 +176,14 @@ fun AddTransactionSheet(
             Icon(
               imageVector = Icons.Default.ArrowDownward,
               contentDescription = null,
-              tint = if (expenseSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+              tint = if (expenseSelected) Color.White else MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "Expense",
               fontWeight = FontWeight.Bold,
-              color = if (expenseSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+              color = if (expenseSelected) Color.White else MaterialTheme.colorScheme.onSurface
             )
           }
         }
@@ -185,7 +191,7 @@ fun AddTransactionSheet(
         val incomeSelected = selectedType == TransactionType.INCOME
         Surface(
           shape = RoundedCornerShape(12.dp),
-          color = if (incomeSelected) Color(0xFF0F9D58) else Color.Transparent,
+          color = if (incomeSelected) accentColor else Color.Transparent,
           modifier = Modifier
             .weight(1f)
             .clip(RoundedCornerShape(12.dp))
@@ -200,14 +206,14 @@ fun AddTransactionSheet(
             Icon(
               imageVector = Icons.Default.ArrowUpward,
               contentDescription = null,
-              tint = if (incomeSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+              tint = if (incomeSelected) Color.White else MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "Income",
               fontWeight = FontWeight.Bold,
-              color = if (incomeSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+              color = if (incomeSelected) Color.White else MaterialTheme.colorScheme.onSurface
             )
           }
         }

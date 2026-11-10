@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -56,6 +57,7 @@ import com.example.ui.screens.AuthLockScreen
 import com.example.ui.screens.BackupSettingsScreen
 import com.example.ui.screens.BudgetsScreen
 import com.example.ui.screens.DashboardScreen
+import com.example.ui.screens.InitialSecuritySetupScreen
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.theme.MyMoneyManagerTheme
 import com.example.ui.viewmodel.FinanceViewModel
@@ -101,7 +103,7 @@ class MainActivity : FragmentActivity() {
 
     val executor = ContextCompat.getMainExecutor(this)
     val promptInfo = BiometricPrompt.PromptInfo.Builder()
-      .setTitle("Unlock myMoneymanager")
+      .setTitle("Unlock M3Note")
       .setSubtitle("Confirm your biometric identity to access your financial records")
       .setNegativeButtonText("Use 6-Digit PIN")
       .build()
@@ -137,6 +139,7 @@ fun MyMoneyManagerApp(
   onLaunchBiometric: (onSuccess: () -> Unit, onFailure: (String) -> Unit) -> Unit,
   viewModel: FinanceViewModel = viewModel()
 ) {
+  val isSetupDone by viewModel.isSetupDone.collectAsStateWithLifecycle()
   val isUnlocked by viewModel.isUnlocked.collectAsStateWithLifecycle()
   val securityEnabled by viewModel.securityEnabled.collectAsStateWithLifecycle()
   val biometricEnabled by viewModel.biometricEnabled.collectAsStateWithLifecycle()
@@ -188,6 +191,20 @@ fun MyMoneyManagerApp(
   // Back handler for sub-tabs
   BackHandler(enabled = isUnlocked && currentScreen != AppScreen.DASHBOARD) {
     currentScreen = AppScreen.DASHBOARD
+  }
+
+  // Initial Security Setup Screen (PIN / Fingerprint setup on first run)
+  if (!isSetupDone) {
+    InitialSecuritySetupScreen(
+      onSetupComplete = { pin, enableBiometric ->
+        viewModel.completeInitialSecuritySetup(pin, enableBiometric)
+      },
+      onSkipSetup = {
+        viewModel.skipInitialSecuritySetup()
+      },
+      isBiometricAvailable = true
+    )
+    return
   }
 
   // Locked Screen
@@ -262,10 +279,15 @@ fun MyMoneyManagerApp(
         FloatingActionButton(
           onClick = { showAddSheet = true },
           containerColor = MaterialTheme.colorScheme.primary,
-          contentColor = Color.White,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
           modifier = Modifier.testTag("dashboard_fab_add")
         ) {
-          Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+          Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add Transaction",
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(28.dp)
+          )
         }
       }
     },
@@ -361,6 +383,9 @@ fun MyMoneyManagerApp(
                 daysUntilDue = 3
               )
               viewModel.showMessage("Recurring reminder notification sent!")
+            },
+            onClearAllData = {
+              viewModel.clearAllData()
             }
           )
         }

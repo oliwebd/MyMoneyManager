@@ -7,7 +7,7 @@ class ExampleRobolectricTest {
 
   @Test
   fun testAppNameConstant() {
-    val expectedName = "myMoneymanager"
-    assertEquals("myMoneymanager", expectedName)
+    val expectedName = "M3Note"
+    assertEquals("M3Note", expectedName)
   }
 }

@@ -92,11 +92,16 @@ fun BudgetsScreen(
       FloatingActionButton(
         onClick = { showAddDialog = true },
         containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = Color.White,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = CircleShape,
         modifier = Modifier.testTag("fab_add_budget")
       ) {
-        Icon(Icons.Default.Add, contentDescription = "Add Budget Goal")
+        Icon(
+          imageVector = Icons.Default.Add,
+          contentDescription = "Add Budget Goal",
+          tint = MaterialTheme.colorScheme.onPrimary,
+          modifier = Modifier.size(28.dp)
+        )
       }
     },
     modifier = modifier.fillMaxSize()

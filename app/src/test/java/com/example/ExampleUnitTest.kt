@@ -20,7 +20,7 @@ class ExampleUnitTest {
 
   @Test
   fun testAes256GcmCryptoAlgorithm() {
-    val samplePayload = "{\"test\": \"myMoneymanager Financial Record\", \"amount\": 124.50}"
+    val samplePayload = "{\"test\": \"M3Note Financial Record\", \"amount\": 124.50}"
     val plainBytes = samplePayload.toByteArray(StandardCharsets.UTF_8)
     val password = "StrongPassword2026!".toCharArray()
 

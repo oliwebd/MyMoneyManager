@@ -117,7 +117,7 @@ fun AuthLockScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-          text = "myMoneymanager",
+          text = "M3Note",
           style = MaterialTheme.typography.headlineMedium,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onBackground
