@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,9 +23,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Key
@@ -42,6 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -574,39 +578,90 @@ fun BackupSettingsScreen(
 
   // Currency Selection Dialog
   if (showCurrencyDialog) {
+    var currencySearchQuery by remember { mutableStateOf("") }
+    val filteredCurrencies = remember(currencySearchQuery) {
+      if (currencySearchQuery.isBlank()) {
+        SupportedCurrencies
+      } else {
+        val q = currencySearchQuery.trim().lowercase()
+        SupportedCurrencies.filter {
+          it.code.lowercase().contains(q) ||
+            it.name.lowercase().contains(q) ||
+            it.symbol.lowercase().contains(q)
+        }
+      }
+    }
+
     AlertDialog(
       onDismissRequest = { showCurrencyDialog = false },
-      title = { Text("Select Base Currency") },
+      title = { Text("Select Base Currency (${SupportedCurrencies.size} Available)") },
       text = {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-          items(SupportedCurrencies.size) { index ->
-            val curr = SupportedCurrencies[index]
-            val isSelected = curr.code == currentCurrencyCode
-            Surface(
-              shape = RoundedCornerShape(12.dp),
-              color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-              modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                  onCurrencySelected(curr.code)
-                  showCurrencyDialog = false
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          OutlinedTextField(
+            value = currencySearchQuery,
+            onValueChange = { currencySearchQuery = it },
+            placeholder = { Text("Search code, symbol, or country...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+              if (currencySearchQuery.isNotEmpty()) {
+                IconButton(onClick = { currencySearchQuery = "" }) {
+                  Icon(Icons.Default.Clear, contentDescription = "Clear search")
                 }
-            ) {
-              Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+              }
+            },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag("currency_search_input")
+          )
+
+          LazyColumn(
+            modifier = Modifier.heightIn(max = 380.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            items(filteredCurrencies.size) { index ->
+              val curr = filteredCurrencies[index]
+              val isSelected = curr.code == currentCurrencyCode
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .clickable {
+                    onCurrencySelected(curr.code)
+                    showCurrencyDialog = false
+                  }
+                  .testTag("currency_item_${curr.code}")
               ) {
+                Row(
+                  modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                  Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                      text = "${curr.code} • ${curr.name}",
+                      style = MaterialTheme.typography.bodyMedium,
+                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                      color = MaterialTheme.colorScheme.onSurface
+                    )
+                  }
+                  Text(
+                    text = curr.symbol,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                  )
+                }
+              }
+            }
+
+            if (filteredCurrencies.isEmpty()) {
+              item {
                 Text(
-                  text = "${curr.code} (${curr.name})",
+                  text = "No matching currencies found.",
                   style = MaterialTheme.typography.bodyMedium,
-                  fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                )
-                Text(
-                  text = curr.symbol,
-                  style = MaterialTheme.typography.titleMedium,
-                  fontWeight = FontWeight.Bold,
-                  color = MaterialTheme.colorScheme.primary
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.padding(vertical = 16.dp)
                 )
               }
             }

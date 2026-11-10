@@ -362,60 +362,44 @@ fun DashboardScreen(
 
     // Quick Action Bar
     item {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        modifier = Modifier.fillMaxWidth()
       ) {
-        Button(
-          onClick = onOpenAddTransaction,
-          shape = RoundedCornerShape(14.dp),
-          colors = ButtonDefaults.buttonColors(
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+          horizontalArrangement = Arrangement.SpaceEvenly,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          QuickActionItem(
+            icon = Icons.Default.Add,
+            label = "Add Entry",
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-          ),
-          modifier = Modifier
-            .weight(1.3f)
-            .height(48.dp)
-            .testTag("quick_add_transaction_button")
-        ) {
-          Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.onPrimary
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            onClick = onOpenAddTransaction,
+            testTag = "quick_add_transaction_button"
           )
-          Spacer(modifier = Modifier.width(6.dp))
-          Text(
-            text = "+ Expense",
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimary
+          QuickActionItem(
+            icon = Icons.Default.Savings,
+            label = "Budgets",
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            onClick = onNavigateToBudgets,
+            testTag = "quick_budgets_button"
           )
-        }
-
-        FilledTonalButton(
-          onClick = onNavigateToBudgets,
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier
-            .weight(1f)
-            .height(48.dp)
-            .testTag("quick_budgets_button")
-        ) {
-          Icon(Icons.Default.Savings, contentDescription = null, modifier = Modifier.size(18.dp))
-          Spacer(modifier = Modifier.width(4.dp))
-          Text("Budgets")
-        }
-
-        FilledTonalButton(
-          onClick = onNavigateToBackup,
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier
-            .weight(1f)
-            .height(48.dp)
-            .testTag("quick_backup_button")
-        ) {
-          Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(18.dp))
-          Spacer(modifier = Modifier.width(4.dp))
-          Text("Sync")
+          QuickActionItem(
+            icon = Icons.Default.Security,
+            label = "Vault",
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            onClick = onNavigateToBackup,
+            testTag = "quick_backup_button"
+          )
         }
       }
     }
@@ -635,3 +619,45 @@ fun TransactionRowItem(
     }
   }
 }
+
+@Composable
+private fun QuickActionItem(
+  icon: androidx.compose.ui.graphics.vector.ImageVector,
+  label: String,
+  containerColor: Color,
+  contentColor: Color,
+  onClick: () -> Unit,
+  testTag: String
+) {
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    modifier = Modifier
+      .clip(RoundedCornerShape(16.dp))
+      .clickable(onClick = onClick)
+      .padding(horizontal = 12.dp, vertical = 6.dp)
+      .testTag(testTag)
+  ) {
+    Box(
+      modifier = Modifier
+        .size(48.dp)
+        .background(color = containerColor, shape = CircleShape),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = label,
+        tint = contentColor,
+        modifier = Modifier.size(24.dp)
+      )
+    }
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = label,
+      style = MaterialTheme.typography.labelMedium,
+      fontWeight = FontWeight.SemiBold,
+      color = MaterialTheme.colorScheme.onSurface,
+      maxLines = 1
+    )
+  }
+}
+
