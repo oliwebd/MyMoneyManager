@@ -186,12 +186,9 @@ class MainActivity : FragmentActivity() {
       object : BiometricPrompt.AuthenticationCallback() {
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
           super.onAuthenticationSucceeded(result)
-          val authenticatedCipher = result.cryptoObject?.cipher
-          if (authenticatedCipher != null) {
-            onSuccess()
-          } else {
-            onFailure("Biometric authentication verification failed.")
-          }
+          // The Keystore key requires user auth, so doFinal only succeeds after a real biometric
+          val verified = runCatching { result.cryptoObject?.cipher?.doFinal(ByteArray(1)) }.getOrNull() != null
+          if (verified) onSuccess() else onFailure("Biometric authentication verification failed.")
         }
 
         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {

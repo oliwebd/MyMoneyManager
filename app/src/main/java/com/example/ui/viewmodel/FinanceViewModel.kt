@@ -152,7 +152,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
   }
 
   fun unlockWithBiometric() {
-    _isUnlocked.value = true
+    if (_securityEnabled.value && _biometricEnabled.value) {
+      _isUnlocked.value = true
+    }
   }
 
   fun lockApp() {
