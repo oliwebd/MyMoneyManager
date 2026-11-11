@@ -155,8 +155,6 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     _isUnlocked.value = true
   }
 
-  var skipNextLock = false
-
   fun lockApp() {
     if (_securityEnabled.value) {
       _isUnlocked.value = false

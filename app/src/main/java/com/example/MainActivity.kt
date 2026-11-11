@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.security.keystore.KeyGenParameterSpec
@@ -102,8 +103,7 @@ class MainActivity : FragmentActivity() {
 
   override fun onStop() {
     super.onStop()
-    if (isChangingConfigurations) return
-    if (viewModel.skipNextLock) viewModel.skipNextLock = false else viewModel.lockApp()
+    if (!isChangingConfigurations) viewModel.lockApp()
   }
 
   companion object {
@@ -240,6 +240,12 @@ fun MyMoneyManagerApp(
   val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val snackbarHostState = remember { SnackbarHostState() }
   val coroutineScope = rememberCoroutineScope()
+
+  // Lives above the lock gate so a restore file pick survives the app locking
+  var pickedImportUri by remember { mutableStateOf<Uri?>(null) }
+  val importFileLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.GetContent()
+  ) { pickedImportUri = it }
 
   // Android 13+ Notification permission request
   val notificationLauncher = rememberLauncherForActivityResult(
@@ -464,7 +470,9 @@ fun MyMoneyManagerApp(
             onClearAllData = {
               viewModel.clearAllData()
             },
-            onPickFile = { viewModel.skipNextLock = true }
+            onPickFile = { importFileLauncher.launch("*/*") },
+            pickedUri = pickedImportUri,
+            onPickedUriHandled = { pickedImportUri = null }
           )
         }
       }

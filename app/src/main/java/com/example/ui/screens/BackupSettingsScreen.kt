@@ -2,8 +2,6 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +51,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,6 +86,8 @@ fun BackupSettingsScreen(
   onTriggerTestNotification: () -> Unit,
   onClearAllData: () -> Unit = {},
   onPickFile: () -> Unit = {},
+  pickedUri: Uri? = null,
+  onPickedUriHandled: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -99,13 +100,11 @@ fun BackupSettingsScreen(
   var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
   var statusMessage by remember { mutableStateOf<String?>(null) }
 
-  // File picker launcher
-  val filePickerLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.GetContent()
-  ) { uri ->
-    if (uri != null) {
-      selectedFileUri = uri
+  LaunchedEffect(pickedUri) {
+    pickedUri?.let {
+      selectedFileUri = it
       showImportDialog = true
+      onPickedUriHandled()
     }
   }
 
@@ -188,10 +187,7 @@ fun BackupSettingsScreen(
             }
 
             Button(
-              onClick = {
-                onPickFile()
-                filePickerLauncher.launch("*/*")
-              },
+              onClick = onPickFile,
               shape = RoundedCornerShape(12.dp),
               colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
               modifier = Modifier
