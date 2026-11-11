@@ -75,12 +75,12 @@ fun BackupSettingsScreen(
   currentCurrencyCode: String,
   onCurrencySelected: (String) -> Unit,
   securityEnabled: Boolean,
-  onToggleSecurity: (Boolean) -> Unit,
+  onToggleSecurity: (Boolean, String) -> Boolean,
   biometricEnabled: Boolean,
   onToggleBiometric: (Boolean) -> Unit,
   notificationsEnabled: Boolean,
   onToggleNotifications: (Boolean) -> Unit,
-  onChangePin: (String) -> Unit,
+  onChangePin: (newPin: String, currentPin: String) -> Boolean,
   onExportEncrypted: (passphrase: CharArray, onReady: (Intent) -> Unit, onError: (String) -> Unit) -> Unit,
   onImportEncrypted: (uri: Uri, passphrase: CharArray, onSuccess: (Int) -> Unit, onError: (String) -> Unit) -> Unit,
   onTriggerTestNotification: () -> Unit,
@@ -95,6 +95,7 @@ fun BackupSettingsScreen(
   var showExportDialog by remember { mutableStateOf(false) }
   var showImportDialog by remember { mutableStateOf(false) }
   var showChangePinDialog by remember { mutableStateOf(false) }
+  var pinConfirm by remember { mutableStateOf<((String) -> Boolean)?>(null) }
   var showCurrencyDialog by remember { mutableStateOf(false) }
   var showClearDataDialog by remember { mutableStateOf(false) }
   var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -266,7 +267,9 @@ fun BackupSettingsScreen(
             title = "Passcode Protection",
             subtitle = "Lock app when closed or minimized",
             checked = securityEnabled,
-            onCheckedChange = onToggleSecurity
+            onCheckedChange = { on ->
+              if (on || !securityEnabled) onToggleSecurity(on, "") else pinConfirm = { onToggleSecurity(false, it) }
+            }
           )
 
           Spacer(modifier = Modifier.height(8.dp))
@@ -521,6 +524,7 @@ fun BackupSettingsScreen(
 
   // Change 6-Digit PIN Dialog
   if (showChangePinDialog) {
+    var currentPinInput by remember { mutableStateOf("") }
     var newPinInput by remember { mutableStateOf("") }
     var pinError by remember { mutableStateOf<String?>(null) }
 
@@ -533,6 +537,12 @@ fun BackupSettingsScreen(
             text = "Enter a 6-digit numeric PIN for fallback app unlocking:",
             style = MaterialTheme.typography.bodySmall
           )
+          if (securityEnabled) {
+            PinField(currentPinInput, "Current PIN", "current_pin_input") {
+              currentPinInput = it
+              pinError = null
+            }
+          }
           OutlinedTextField(
             value = newPinInput,
             onValueChange = {
@@ -559,8 +569,11 @@ fun BackupSettingsScreen(
               pinError = "PIN must be exactly 6 digits."
               return@Button
             }
-            onChangePin(newPinInput)
-            showChangePinDialog = false
+            if (onChangePin(newPinInput, currentPinInput)) {
+              showChangePinDialog = false
+            } else {
+              pinError = "Incorrect current PIN or too many attempts."
+            }
           },
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.testTag("save_new_pin_button")
@@ -575,6 +588,8 @@ fun BackupSettingsScreen(
       }
     )
   }
+
+  pinConfirm?.let { ConfirmPinDialog(onDismiss = { pinConfirm = null }, onConfirm = it) }
 
   // Currency Selection Dialog
   if (showCurrencyDialog) {
@@ -712,6 +727,44 @@ fun BackupSettingsScreen(
       }
     )
   }
+}
+
+@Composable
+private fun PinField(value: String, label: String, tag: String, onValueChange: (String) -> Unit) {
+  OutlinedTextField(
+    value = value,
+    onValueChange = { if (it.length <= 6 && it.all(Char::isDigit)) onValueChange(it) },
+    label = { Text(label) },
+    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+    visualTransformation = PasswordVisualTransformation(),
+    shape = RoundedCornerShape(12.dp),
+    modifier = Modifier.fillMaxWidth().testTag(tag)
+  )
+}
+
+@Composable
+private fun ConfirmPinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Boolean) {
+  var pin by remember { mutableStateOf("") }
+  var failed by remember { mutableStateOf(false) }
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Confirm Current PIN") },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PinField(pin, "Current PIN", "confirm_pin_input") {
+          pin = it
+          failed = false
+        }
+        if (failed) {
+          Text("Incorrect PIN or too many attempts.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+      }
+    },
+    confirmButton = {
+      Button(onClick = { if (onConfirm(pin)) onDismiss() else failed = true }) { Text("Confirm") }
+    },
+    dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+  )
 }
 
 @Composable

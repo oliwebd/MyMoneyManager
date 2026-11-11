@@ -443,12 +443,12 @@ fun MyMoneyManagerApp(
             currentCurrencyCode = baseCurrency,
             onCurrencySelected = { viewModel.setBaseCurrency(it) },
             securityEnabled = securityEnabled,
-            onToggleSecurity = { viewModel.toggleSecurity(it) },
+            onToggleSecurity = { on, pin -> viewModel.toggleSecurity(on, pin) },
             biometricEnabled = biometricEnabled,
             onToggleBiometric = { viewModel.toggleBiometric(it) },
             notificationsEnabled = notificationsEnabled,
             onToggleNotifications = { viewModel.toggleNotifications(it) },
-            onChangePin = { viewModel.setNewPin(it) },
+            onChangePin = { newPin, currentPin -> viewModel.setNewPin(newPin, currentPin) },
             onExportEncrypted = { pass, onReady, onError ->
               viewModel.exportEncryptedBackup(pass, onReady, onError)
             },

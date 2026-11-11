@@ -184,23 +184,29 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     showMessage("Welcome to M3Note! Security can be configured anytime in Vault settings.")
   }
 
-  fun setNewPin(newPin: String) {
+  private fun pinConfirmed(pin: String) = !_securityEnabled.value || repository.securityPrefs.verifyPin(pin)
+
+  fun setNewPin(newPin: String, currentPin: String): Boolean {
+    if (!pinConfirmed(currentPin)) return false
     repository.securityPrefs.setPin(newPin)
     showMessage("6-digit PIN successfully updated!")
+    return true
   }
 
-  fun toggleSecurity(enabled: Boolean) {
+  fun toggleSecurity(enabled: Boolean, currentPin: String = ""): Boolean {
+    if (!enabled && !pinConfirmed(currentPin)) return false
     if (enabled && !repository.securityPrefs.hasPin()) {
       repository.securityPrefs.setSecurityEnabled(false)
       _securityEnabled.value = false
       showMessage("Please set a PIN before enabling security lock.")
-      return
+      return false
     }
     repository.securityPrefs.setSecurityEnabled(enabled)
     _securityEnabled.value = enabled
     if (!enabled) {
       _isUnlocked.value = true
     }
+    return true
   }
 
   fun toggleBiometric(enabled: Boolean) {
