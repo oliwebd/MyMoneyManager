@@ -86,6 +86,7 @@ fun BackupSettingsScreen(
   onImportEncrypted: (uri: Uri, passphrase: CharArray, onSuccess: (Int) -> Unit, onError: (String) -> Unit) -> Unit,
   onTriggerTestNotification: () -> Unit,
   onClearAllData: () -> Unit = {},
+  onPickFile: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -187,7 +188,10 @@ fun BackupSettingsScreen(
             }
 
             Button(
-              onClick = { filePickerLauncher.launch("*/*") },
+              onClick = {
+                onPickFile()
+                filePickerLauncher.launch("*/*")
+              },
               shape = RoundedCornerShape(12.dp),
               colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
               modifier = Modifier

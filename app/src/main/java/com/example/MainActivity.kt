@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
+import android.view.WindowManager
 import android.widget.Toast
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -14,6 +15,7 @@ import javax.crypto.SecretKey
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
@@ -80,8 +82,11 @@ enum class AppScreen {
 
 class MainActivity : FragmentActivity() {
 
+  private val viewModel: FinanceViewModel by viewModels()
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     enableEdgeToEdge()
 
     setContent {
@@ -93,6 +98,12 @@ class MainActivity : FragmentActivity() {
         )
       }
     }
+  }
+
+  override fun onStop() {
+    super.onStop()
+    if (isChangingConfigurations) return
+    if (viewModel.skipNextLock) viewModel.skipNextLock = false else viewModel.lockApp()
   }
 
   companion object {
@@ -452,7 +463,8 @@ fun MyMoneyManagerApp(
             },
             onClearAllData = {
               viewModel.clearAllData()
-            }
+            },
+            onPickFile = { viewModel.skipNextLock = true }
           )
         }
       }
