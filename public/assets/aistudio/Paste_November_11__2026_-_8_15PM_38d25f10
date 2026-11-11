@@ -1,0 +1,1523 @@
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/MainActivity.kt proj/MyMoneyManager-main/app/src/main/java/com/example/MainActivity.kt
+--- a/app/src/main/java/com/example/MainActivity.kt	2026-11-11 10:29:39.473996919 +0300
++++ b/app/src/main/java/com/example/MainActivity.kt	2026-11-11 10:32:30.604426355 +0300
+@@ -16,6 +16,7 @@
+ import androidx.compose.animation.fadeOut
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.WindowInsets
++import androidx.compose.foundation.layout.consumeWindowInsets
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.navigationBars
+ import androidx.compose.foundation.layout.padding
+@@ -255,7 +256,7 @@
+           selected = currentScreen == AppScreen.TRANSACTIONS,
+           onClick = { currentScreen = AppScreen.TRANSACTIONS },
+           icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Transactions") },
+-          label = { Text("Records") },
++          label = { Text("Transactions") },
+           modifier = Modifier.testTag("nav_tab_transactions")
+         )
+         NavigationBarItem(
+@@ -297,6 +298,7 @@
+       modifier = Modifier
+         .fillMaxSize()
+         .padding(innerPadding)
++        .consumeWindowInsets(innerPadding)
+     ) {
+       when (currentScreen) {
+         AppScreen.DASHBOARD -> {
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/components/AutoSuggestTextField.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/components/AutoSuggestTextField.kt
+--- a/app/src/main/java/com/example/ui/components/AutoSuggestTextField.kt	2026-11-11 10:29:39.475092551 +0300
++++ b/app/src/main/java/com/example/ui/components/AutoSuggestTextField.kt	2026-11-11 10:32:30.609119661 +0300
+@@ -38,7 +38,6 @@
+ import androidx.compose.ui.text.input.ImeAction
+ import androidx.compose.ui.text.input.KeyboardCapitalization
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ 
+ data class SuggestionPreset(
+   val title: String,
+@@ -187,13 +186,12 @@
+                 if (suggestion.categoryName.isNotBlank()) {
+                   Spacer(modifier = Modifier.width(6.dp))
+                   Surface(
+-                    shape = RoundedCornerShape(6.dp),
++                    shape = RoundedCornerShape(8.dp),
+                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                   ) {
+                     Text(
+                       text = suggestion.categoryName,
+                       style = MaterialTheme.typography.labelSmall,
+-                      fontSize = 10.sp,
+                       color = MaterialTheme.colorScheme.onSurfaceVariant,
+                       modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                     )
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/components/Charts.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/components/Charts.kt
+--- a/app/src/main/java/com/example/ui/components/Charts.kt	2026-11-11 10:29:39.475214852 +0300
++++ b/app/src/main/java/com/example/ui/components/Charts.kt	2026-11-11 10:30:55.574371459 +0300
+@@ -58,6 +58,12 @@
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+ import com.example.data.model.CategoryEntity
++import com.example.ui.theme.ExpenseRed
++import com.example.ui.theme.ExpenseRedDark
++import com.example.ui.theme.IncomeGreen
++import com.example.ui.theme.IncomeGreenDark
++import com.example.ui.theme.expenseColors
++import com.example.ui.theme.incomeColors
+ import kotlin.math.atan2
+ 
+ data class CategorySlice(
+@@ -158,6 +164,7 @@
+                   val dy = offset.y - center.y
+                   var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                   if (angle < 0) angle += 360f
++                  angle = (angle + 90f) % 360f
+ 
+                   var currentAngle = 0f
+                   var matched: Int? = null
+@@ -235,7 +242,6 @@
+               Text(
+                 text = "Tap slice for details",
+                 style = MaterialTheme.typography.labelSmall,
+-                fontSize = 10.sp,
+                 color = MaterialTheme.colorScheme.outline
+               )
+             }
+@@ -351,9 +357,9 @@
+           FilterChip(
+             selected = selectedChartStyle == ChartStyle.BAR_COLUMNS,
+             onClick = { selectedChartStyle = ChartStyle.BAR_COLUMNS; touchedItemIndex = null },
+-            label = { Text("Bars", fontSize = 11.sp) },
++            label = { Text("Bars", style = MaterialTheme.typography.labelSmall) },
+             leadingIcon = { Icon(Icons.Default.BarChart, contentDescription = null, modifier = Modifier.size(14.dp)) },
+-            shape = RoundedCornerShape(10.dp),
++            shape = RoundedCornerShape(12.dp),
+             colors = FilterChipDefaults.filterChipColors(
+               selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+               selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+@@ -362,9 +368,9 @@
+           FilterChip(
+             selected = selectedChartStyle == ChartStyle.SPLINE_AREA,
+             onClick = { selectedChartStyle = ChartStyle.SPLINE_AREA; touchedItemIndex = null },
+-            label = { Text("Curve", fontSize = 11.sp) },
++            label = { Text("Curve", style = MaterialTheme.typography.labelSmall) },
+             leadingIcon = { Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(14.dp)) },
+-            shape = RoundedCornerShape(10.dp),
++            shape = RoundedCornerShape(12.dp),
+             colors = FilterChipDefaults.filterChipColors(
+               selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+               selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+@@ -384,7 +390,7 @@
+         val touched = touchedItemIndex?.let { trends.getOrNull(it) }
+         if (touched != null) {
+           Surface(
+-            shape = RoundedCornerShape(14.dp),
++            shape = RoundedCornerShape(12.dp),
+             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+             modifier = Modifier
+               .fillMaxWidth()
+@@ -408,20 +414,20 @@
+                   text = "In: +$currencySymbol${String.format("%.0f", touched.income)}",
+                   style = MaterialTheme.typography.labelSmall,
+                   fontWeight = FontWeight.Bold,
+-                  color = Color(0xFF0F9D58)
++                  color = incomeColors().main
+                 )
+                 Text(
+                   text = "Out: -$currencySymbol${String.format("%.0f", touched.expense)}",
+                   style = MaterialTheme.typography.labelSmall,
+                   fontWeight = FontWeight.Bold,
+-                  color = Color(0xFFEA4335)
++                  color = expenseColors().main
+                 )
+                 val net = touched.income - touched.expense
+                 Text(
+                   text = "Net: ${if (net >= 0) "+" else ""}$currencySymbol${String.format("%.0f", net)}",
+                   style = MaterialTheme.typography.labelSmall,
+                   fontWeight = FontWeight.Bold,
+-                  color = if (net >= 0) Color(0xFF0F9D58) else Color(0xFFEA4335)
++                  color = if (net >= 0) incomeColors().main else expenseColors().main
+                 )
+               }
+             }
+@@ -501,7 +507,7 @@
+ 
+                 drawRoundRect(
+                   brush = Brush.verticalGradient(
+-                    colors = listOf(Color(0xFF81C995), Color(0xFF0F9D58))
++                    colors = listOf(IncomeGreenDark, IncomeGreen)
+                   ),
+                   topLeft = Offset(incX, incY),
+                   size = Size(barWidth, incBarHeight),
+@@ -515,7 +521,7 @@
+ 
+                 drawRoundRect(
+                   brush = Brush.verticalGradient(
+-                    colors = listOf(Color(0xFFF28B82), Color(0xFFEA4335))
++                    colors = listOf(ExpenseRedDark, ExpenseRed)
+                   ),
+                   topLeft = Offset(expX, expY),
+                   size = Size(barWidth, expBarHeight),
+@@ -550,7 +556,7 @@
+               drawPath(
+                 path = incAreaPath,
+                 brush = Brush.verticalGradient(
+-                  colors = listOf(Color(0xFF0F9D58).copy(alpha = 0.25f), Color(0xFF0F9D58).copy(alpha = 0.02f)),
++                  colors = listOf(IncomeGreen.copy(alpha = 0.25f), IncomeGreen.copy(alpha = 0.02f)),
+                   startY = 0f,
+                   endY = bottomY
+                 )
+@@ -558,7 +564,7 @@
+ 
+               drawPath(
+                 path = incPath,
+-                color = Color(0xFF0F9D58),
++                color = IncomeGreen,
+                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+               )
+ 
+@@ -574,7 +580,7 @@
+               drawPath(
+                 path = expAreaPath,
+                 brush = Brush.verticalGradient(
+-                  colors = listOf(Color(0xFFEA4335).copy(alpha = 0.20f), Color(0xFFEA4335).copy(alpha = 0.02f)),
++                  colors = listOf(ExpenseRed.copy(alpha = 0.20f), ExpenseRed.copy(alpha = 0.02f)),
+                   startY = 0f,
+                   endY = bottomY
+                 )
+@@ -582,19 +588,19 @@
+ 
+               drawPath(
+                 path = expPath,
+-                color = Color(0xFFEA4335),
++                color = ExpenseRed,
+                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+               )
+ 
+               // Draw Data Point Dots
+               incomePoints.forEach { pt ->
+                 drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pt)
+-                drawCircle(color = Color(0xFF0F9D58), radius = 3.5.dp.toPx(), center = pt)
++                drawCircle(color = IncomeGreen, radius = 3.5.dp.toPx(), center = pt)
+               }
+ 
+               expensePoints.forEach { pt ->
+                 drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pt)
+-                drawCircle(color = Color(0xFFEA4335), radius = 3.5.dp.toPx(), center = pt)
++                drawCircle(color = ExpenseRed, radius = 3.5.dp.toPx(), center = pt)
+               }
+             }
+           }
+@@ -643,6 +649,6 @@
+ 
+ private val MaterialTheme.styleOfChartTitle
+   @Composable get() = MaterialTheme.typography.titleMedium.copy(
+-    fontWeight = FontWeight.SemiBold,
++    fontWeight = FontWeight.Bold,
+     letterSpacing = 0.15.sp
+   )
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/components/TouchAdjustmentScroller.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/components/TouchAdjustmentScroller.kt
+--- a/app/src/main/java/com/example/ui/components/TouchAdjustmentScroller.kt	2026-11-11 10:29:39.475300179 +0300
++++ b/app/src/main/java/com/example/ui/components/TouchAdjustmentScroller.kt	2026-11-11 10:32:15.636507511 +0300
+@@ -47,7 +47,6 @@
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.withStyle
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ import kotlin.math.abs
+ 
+ @Composable
+@@ -55,13 +54,14 @@
+   currentAmount: Double,
+   onAmountChanged: (Double) -> Unit,
+   modifier: Modifier = Modifier,
+-  accentColor: Color = Color(0xFFFF334B)
++  accentColor: Color = MaterialTheme.colorScheme.primary
+ ) {
+   var dragAccumulator by remember { mutableFloatStateOf(0f) }
+   var isDragging by remember { mutableStateOf(false) }
+ 
+-  val pillBackground = Color(0xFF23242A)
+-  val infoCardBackground = Color(0xFF1B1C22)
++  val pillBackground = MaterialTheme.colorScheme.surfaceVariant
++  val infoCardBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
++  val emphasisColor = MaterialTheme.colorScheme.onSurface
+ 
+   Column(
+     modifier = modifier.fillMaxWidth(),
+@@ -76,23 +76,23 @@
+       verticalAlignment = Alignment.CenterVertically
+     ) {
+       // Negative steps
+-      DarkStepPill(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
+-      DarkStepPill(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
+-      DarkStepPill(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
++      StepPill(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
++      StepPill(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
++      StepPill(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
+ 
+       // Center Neon Touch Cylinder
+       Box(
+         modifier = Modifier
+           .width(82.dp)
+           .height(58.dp)
+-          .clip(RoundedCornerShape(22.dp))
++          .clip(RoundedCornerShape(24.dp))
+           .background(
+             if (isDragging) accentColor.copy(alpha = 0.28f) else accentColor.copy(alpha = 0.16f)
+           )
+           .border(
+             width = 1.6.dp,
+             color = accentColor,
+-            shape = RoundedCornerShape(22.dp)
++            shape = RoundedCornerShape(24.dp)
+           )
+           .draggable(
+             orientation = Orientation.Vertical,
+@@ -134,7 +134,6 @@
+             text = "Touch",
+             style = MaterialTheme.typography.labelSmall,
+             fontWeight = FontWeight.Bold,
+-            fontSize = 11.sp,
+             color = accentColor
+           )
+           Icon(
+@@ -147,7 +146,7 @@
+       }
+ 
+       // Positive steps
+-      DarkStepPill(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
++      StepPill(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
+ 
+       // Vertical Stepper Pill (+ 10 -)
+       Box(
+@@ -173,7 +172,7 @@
+             Icon(
+               imageVector = Icons.Default.Add,
+               contentDescription = "+10",
+-              tint = Color(0xFFC0C0CC),
++              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+               modifier = Modifier.size(14.dp)
+             )
+           }
+@@ -181,8 +180,7 @@
+             text = "10",
+             style = MaterialTheme.typography.labelSmall,
+             fontWeight = FontWeight.Bold,
+-            fontSize = 12.sp,
+-            color = Color.White
++            color = MaterialTheme.colorScheme.onSurface
+           )
+           Box(
+             modifier = Modifier
+@@ -193,7 +191,7 @@
+             Icon(
+               imageVector = Icons.Default.Remove,
+               contentDescription = "-10",
+-              tint = Color(0xFFC0C0CC),
++              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+               modifier = Modifier.size(14.dp)
+             )
+           }
+@@ -205,7 +203,7 @@
+ 
+     // Info Hint Banner Matching Image 2
+     Surface(
+-      shape = RoundedCornerShape(18.dp),
++      shape = RoundedCornerShape(16.dp),
+       color = infoCardBackground,
+       modifier = Modifier.fillMaxWidth()
+     ) {
+@@ -218,20 +216,19 @@
+         Icon(
+           imageVector = Icons.Default.Info,
+           contentDescription = null,
+-          tint = Color(0xFF8E8E98),
++          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+           modifier = Modifier.size(20.dp)
+         )
+         Spacer(modifier = Modifier.width(10.dp))
+         Text(
+           text = buildAnnotatedString {
+             append("Drag the cylinder up/down or tap steps for ")
+-            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
++            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = emphasisColor)) {
+               append("micro-adjustment")
+             }
+           },
+           style = MaterialTheme.typography.bodySmall,
+-          color = Color(0xFFA0A0AF),
+-          fontSize = 11.5.sp,
++          color = MaterialTheme.colorScheme.onSurfaceVariant,
+           modifier = Modifier.weight(1f)
+         )
+         Spacer(modifier = Modifier.width(8.dp))
+@@ -239,7 +236,7 @@
+           modifier = Modifier
+             .width(1.dp)
+             .height(24.dp)
+-            .background(Color(0x22FFFFFF))
++            .background(MaterialTheme.colorScheme.outline)
+         )
+         Spacer(modifier = Modifier.width(8.dp))
+         Icon(
+@@ -254,14 +251,14 @@
+ }
+ 
+ @Composable
+-private fun DarkStepPill(
++private fun StepPill(
+   label: String,
+   onClick: () -> Unit
+ ) {
+   Box(
+     modifier = Modifier
+       .clip(RoundedCornerShape(16.dp))
+-      .background(Color(0xFF23242A))
++      .background(MaterialTheme.colorScheme.surfaceVariant)
+       .clickable(onClick = onClick)
+       .padding(horizontal = 11.dp, vertical = 14.dp)
+       .testTag("step_chip_$label"),
+@@ -271,8 +268,7 @@
+       text = label,
+       style = MaterialTheme.typography.labelMedium,
+       fontWeight = FontWeight.Bold,
+-      color = Color.White,
+-      fontSize = 13.sp
++      color = MaterialTheme.colorScheme.onSurface
+     )
+   }
+ }
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/AddTransactionSheet.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/AddTransactionSheet.kt
+--- a/app/src/main/java/com/example/ui/screens/AddTransactionSheet.kt	2026-11-11 10:29:39.475368095 +0300
++++ b/app/src/main/java/com/example/ui/screens/AddTransactionSheet.kt	2026-11-11 10:32:02.148187806 +0300
+@@ -56,7 +56,6 @@
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.graphics.Brush
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.SolidColor
+ import androidx.compose.ui.platform.testTag
+@@ -73,6 +72,10 @@
+ import com.example.ui.components.AutoSuggestTextField
+ import com.example.ui.components.CategoryIconHelper
+ import com.example.ui.components.TouchAdjustmentScroller
++import com.example.ui.theme.ExpenseRed
++import com.example.ui.theme.IncomeGreen
++import com.example.ui.theme.expenseColors
++import com.example.ui.theme.incomeColors
+ 
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+@@ -113,10 +116,8 @@
+   var isRecurring by remember { mutableStateOf(false) }
+   var recurringInterval by remember { mutableStateOf(RecurringInterval.MONTHLY) }
+ 
+-  // Neon theme colors matching user screenshot
+-  val neonRed = Color(0xFFFF334B)
+-  val neonGreen = Color(0xFF00E676)
+-  val accentColor = if (selectedType == TransactionType.EXPENSE) neonRed else neonGreen
++  val accentColor = if (selectedType == TransactionType.EXPENSE) expenseColors().main else incomeColors().main
++  val fillColor = if (selectedType == TransactionType.EXPENSE) ExpenseRed else IncomeGreen
+ 
+   fun updateAmount(newVal: Double) {
+     val clamped = maxOf(0.0, newVal)
+@@ -127,8 +128,7 @@
+   ModalBottomSheet(
+     onDismissRequest = onDismiss,
+     sheetState = sheetState,
+-    containerColor = Color(0xFF0F1015),
+-    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
++    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+     dragHandle = null
+   ) {
+     Column(
+@@ -149,7 +149,7 @@
+           Icon(
+             imageVector = Icons.Default.AccountBalanceWallet,
+             contentDescription = null,
+-            tint = Color.White,
++            tint = MaterialTheme.colorScheme.onSurface,
+             modifier = Modifier.size(26.dp)
+           )
+           Spacer(modifier = Modifier.width(10.dp))
+@@ -157,8 +157,7 @@
+             text = "Amount ($currencySymbol)",
+             style = MaterialTheme.typography.titleLarge,
+             fontWeight = FontWeight.Bold,
+-            color = Color.White,
+-            fontSize = 22.sp
++            color = MaterialTheme.colorScheme.onSurface
+           )
+         }
+ 
+@@ -166,7 +165,7 @@
+           modifier = Modifier
+             .size(38.dp)
+             .clip(CircleShape)
+-            .background(Color(0xFF26272E))
++            .background(MaterialTheme.colorScheme.surfaceVariant)
+             .clickable(onClick = onDismiss)
+             .testTag("close_sheet_button"),
+           contentAlignment = Alignment.Center
+@@ -174,7 +173,7 @@
+           Icon(
+             imageVector = Icons.Default.Close,
+             contentDescription = "Close",
+-            tint = Color.White,
++            tint = MaterialTheme.colorScheme.onSurface,
+             modifier = Modifier.size(20.dp)
+           )
+         }
+@@ -185,7 +184,7 @@
+         modifier = Modifier
+           .fillMaxWidth()
+           .clip(RoundedCornerShape(16.dp))
+-          .background(Color(0xFF1E1F26))
++          .background(MaterialTheme.colorScheme.surfaceVariant)
+           .padding(4.dp),
+         horizontalArrangement = Arrangement.spacedBy(4.dp)
+       ) {
+@@ -195,7 +194,7 @@
+             .weight(1f)
+             .height(40.dp)
+             .clip(RoundedCornerShape(12.dp))
+-            .background(if (isExpense) neonRed else Color.Transparent)
++            .background(if (isExpense) ExpenseRed else Color.Transparent)
+             .clickable { selectedType = TransactionType.EXPENSE }
+             .testTag("type_expense_tab"),
+           contentAlignment = Alignment.Center
+@@ -204,15 +203,15 @@
+             Icon(
+               imageVector = Icons.Default.ArrowDownward,
+               contentDescription = null,
+-              tint = Color.White,
++              tint = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+               modifier = Modifier.size(16.dp)
+             )
+             Spacer(modifier = Modifier.width(6.dp))
+             Text(
+               text = "Expense",
++              style = MaterialTheme.typography.labelLarge,
+               fontWeight = FontWeight.Bold,
+-              color = Color.White,
+-              fontSize = 14.sp
++              color = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+             )
+           }
+         }
+@@ -223,7 +222,7 @@
+             .weight(1f)
+             .height(40.dp)
+             .clip(RoundedCornerShape(12.dp))
+-            .background(if (isIncome) neonGreen else Color.Transparent)
++            .background(if (isIncome) IncomeGreen else Color.Transparent)
+             .clickable { selectedType = TransactionType.INCOME }
+             .testTag("type_income_tab"),
+           contentAlignment = Alignment.Center
+@@ -232,15 +231,15 @@
+             Icon(
+               imageVector = Icons.Default.ArrowUpward,
+               contentDescription = null,
+-              tint = Color.White,
++              tint = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+               modifier = Modifier.size(16.dp)
+             )
+             Spacer(modifier = Modifier.width(6.dp))
+             Text(
+               text = "Income",
++              style = MaterialTheme.typography.labelLarge,
+               fontWeight = FontWeight.Bold,
+-              color = Color.White,
+-              fontSize = 14.sp
++              color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+             )
+           }
+         }
+@@ -252,12 +251,12 @@
+       Box(
+         modifier = Modifier
+           .fillMaxWidth()
+-          .clip(RoundedCornerShape(26.dp))
+-          .background(Color(0xFF181920))
++          .clip(RoundedCornerShape(24.dp))
++          .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+           .border(
+             width = 1.8.dp,
+             color = accentColor,
+-            shape = RoundedCornerShape(26.dp)
++            shape = RoundedCornerShape(24.dp)
+           )
+           .padding(vertical = 24.dp, horizontal = 20.dp),
+         contentAlignment = Alignment.Center
+@@ -282,7 +281,7 @@
+             modifier = Modifier
+               .width(1.5.dp)
+               .height(48.dp)
+-              .background(Color(0x33FFFFFF))
++              .background(MaterialTheme.colorScheme.outline)
+           )
+ 
+           Spacer(modifier = Modifier.width(14.dp))
+@@ -298,7 +297,7 @@
+             textStyle = TextStyle(
+               fontSize = 48.sp,
+               fontWeight = FontWeight.Bold,
+-              color = Color.White,
++              color = MaterialTheme.colorScheme.onSurface,
+               textAlign = TextAlign.Start
+             ),
+             singleLine = true,
+@@ -349,7 +348,7 @@
+         Icon(
+           imageVector = Icons.Default.GridView,
+           contentDescription = null,
+-          tint = Color.White,
++          tint = MaterialTheme.colorScheme.onSurface,
+           modifier = Modifier.size(22.dp)
+         )
+         Spacer(modifier = Modifier.width(10.dp))
+@@ -357,8 +356,7 @@
+           text = "Category",
+           style = MaterialTheme.typography.titleMedium,
+           fontWeight = FontWeight.Bold,
+-          color = Color.White,
+-          fontSize = 19.sp
++          color = MaterialTheme.colorScheme.onSurface
+         )
+       }
+ 
+@@ -389,17 +387,17 @@
+               Box(
+                 modifier = Modifier
+                   .weight(1f)
+-                  .height(52.dp)
+-                  .clip(RoundedCornerShape(26.dp))
++                  .height(48.dp)
++                  .clip(RoundedCornerShape(24.dp))
+                   .background(
+-                    if (isSelected) accentColor.copy(alpha = 0.20f) else Color(0xFF202127)
++                    if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceVariant
+                   )
+                   .then(
+                     if (isSelected) {
+                       Modifier.border(
+                         width = 1.8.dp,
+                         color = accentColor,
+-                        shape = RoundedCornerShape(26.dp)
++                        shape = RoundedCornerShape(24.dp)
+                       )
+                     } else Modifier
+                   )
+@@ -422,8 +420,7 @@
+                     text = category.name,
+                     style = MaterialTheme.typography.bodyMedium,
+                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+-                    color = Color.White,
+-                    fontSize = 13.5.sp,
++                    color = MaterialTheme.colorScheme.onSurface,
+                     maxLines = 1
+                   )
+                 }
+@@ -440,8 +437,8 @@
+ 
+       // 5. ACCOUNT / PAYMENT METHOD - Image 1
+       Card(
+-        shape = RoundedCornerShape(22.dp),
+-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
++        shape = RoundedCornerShape(24.dp),
++        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+         modifier = Modifier.fillMaxWidth()
+       ) {
+         Column(
+@@ -453,16 +450,15 @@
+             Icon(
+               imageVector = Icons.Default.CreditCard,
+               contentDescription = null,
+-              tint = Color.White,
++              tint = MaterialTheme.colorScheme.onSurface,
+               modifier = Modifier.size(22.dp)
+             )
+             Spacer(modifier = Modifier.width(10.dp))
+             Text(
+               text = "Account / Payment Method",
+-              style = MaterialTheme.typography.titleSmall,
++              style = MaterialTheme.typography.titleMedium,
+               fontWeight = FontWeight.Bold,
+-              color = Color.White,
+-              fontSize = 16.sp
++              color = MaterialTheme.colorScheme.onSurface
+             )
+           }
+ 
+@@ -488,7 +484,7 @@
+                     .fillMaxSize()
+                     .clip(RoundedCornerShape(24.dp))
+                     .background(
+-                      if (isSelected) accentColor.copy(alpha = 0.20f) else Color(0xFF24252D)
++                      if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surface
+                     )
+                     .then(
+                       if (isSelected) {
+@@ -510,16 +506,15 @@
+                     Icon(
+                       imageVector = accIcon,
+                       contentDescription = null,
+-                      tint = if (isSelected) accentColor else Color.White,
++                      tint = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
+                       modifier = Modifier.size(18.dp)
+                     )
+                     Spacer(modifier = Modifier.width(8.dp))
+                     Text(
+                       text = account.name,
+-                      style = MaterialTheme.typography.bodyMedium,
++                      style = MaterialTheme.typography.labelMedium,
+                       fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+-                      color = Color.White,
+-                      fontSize = 12.5.sp,
++                      color = MaterialTheme.colorScheme.onSurface,
+                       maxLines = 1
+                     )
+                   }
+@@ -533,7 +528,7 @@
+                       .offset(x = 2.dp, y = (-2).dp)
+                       .size(18.dp)
+                       .clip(CircleShape)
+-                      .background(accentColor),
++                      .background(fillColor),
+                     contentAlignment = Alignment.Center
+                   ) {
+                     Icon(
+@@ -554,8 +549,8 @@
+ 
+       // 6. RECURRING TRANSACTION - Image 1
+       Card(
+-        shape = RoundedCornerShape(22.dp),
+-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
++        shape = RoundedCornerShape(24.dp),
++        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+         modifier = Modifier.fillMaxWidth()
+       ) {
+         Column(
+@@ -575,7 +570,7 @@
+               Icon(
+                 imageVector = Icons.Default.Repeat,
+                 contentDescription = null,
+-                tint = Color.White,
++                tint = MaterialTheme.colorScheme.onSurface,
+                 modifier = Modifier.size(24.dp)
+               )
+               Spacer(modifier = Modifier.width(12.dp))
+@@ -584,14 +579,12 @@
+                   text = "Recurring Transaction",
+                   style = MaterialTheme.typography.bodyLarge,
+                   fontWeight = FontWeight.Bold,
+-                  color = Color.White,
+-                  fontSize = 15.sp
++                  color = MaterialTheme.colorScheme.onSurface
+                 )
+                 Text(
+                   text = "Schedule automated alerts & reminders",
+                   style = MaterialTheme.typography.bodySmall,
+-                  color = Color(0xFF8E8E98),
+-                  fontSize = 12.sp
++                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                 )
+               }
+             }
+@@ -601,9 +594,7 @@
+               onCheckedChange = { isRecurring = it },
+               colors = SwitchDefaults.colors(
+                 checkedThumbColor = Color.White,
+-                checkedTrackColor = accentColor,
+-                uncheckedThumbColor = Color(0xFF8E8E98),
+-                uncheckedTrackColor = Color(0xFF2C2D35)
++                checkedTrackColor = fillColor
+               ),
+               modifier = Modifier.testTag("recurring_switch")
+             )
+@@ -623,15 +614,15 @@
+                     .weight(1f)
+                     .height(38.dp)
+                     .clip(RoundedCornerShape(12.dp))
+-                    .background(if (isSelected) accentColor else Color(0xFF24252D))
++                    .background(if (isSelected) fillColor else MaterialTheme.colorScheme.surface)
+                     .clickable { recurringInterval = interval },
+                   contentAlignment = Alignment.Center
+                 ) {
+                   Text(
+                     text = interval.name.lowercase().replaceFirstChar { it.uppercase() },
++                    style = MaterialTheme.typography.labelMedium,
+                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+-                    color = Color.White,
+-                    fontSize = 12.sp
++                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                   )
+                 }
+               }
+@@ -644,8 +635,8 @@
+ 
+       // 7. NOTE (OPTIONAL) - Image 1
+       Card(
+-        shape = RoundedCornerShape(22.dp),
+-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
++        shape = RoundedCornerShape(24.dp),
++        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+         modifier = Modifier.fillMaxWidth()
+       ) {
+         Row(
+@@ -657,7 +648,7 @@
+           Icon(
+             imageVector = Icons.Default.Description,
+             contentDescription = null,
+-            tint = Color(0xFF8E8E98),
++            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+             modifier = Modifier.size(22.dp)
+           )
+           Spacer(modifier = Modifier.width(12.dp))
+@@ -666,17 +657,13 @@
+               Text(
+                 text = "Note (Optional)",
+                 style = MaterialTheme.typography.bodyMedium,
+-                color = Color(0xFF8E8E98)
++                color = MaterialTheme.colorScheme.onSurfaceVariant
+               )
+             }
+             BasicTextField(
+               value = note,
+               onValueChange = { note = it },
+-              textStyle = TextStyle(
+-                fontSize = 15.sp,
+-                color = Color.White,
+-                fontWeight = FontWeight.Normal
+-              ),
++              textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+               cursorBrush = SolidColor(accentColor),
+               singleLine = true,
+               modifier = Modifier
+@@ -695,13 +682,7 @@
+           .fillMaxWidth()
+           .height(56.dp)
+           .clip(RoundedCornerShape(28.dp))
+-          .background(
+-            if (selectedType == TransactionType.EXPENSE) {
+-              Brush.horizontalGradient(listOf(Color(0xFFFF2A4A), Color(0xFFFF483D)))
+-            } else {
+-              Brush.horizontalGradient(listOf(Color(0xFF00C853), Color(0xFF00E676)))
+-            }
+-          )
++          .background(fillColor)
+           .clickable {
+             val finalTitle = if (title.isBlank()) {
+               val cat = categories.find { it.id == selectedCategoryId }
+@@ -737,9 +718,9 @@
+           Spacer(modifier = Modifier.width(8.dp))
+           Text(
+             text = "Save ${if (selectedType == TransactionType.INCOME) "Income" else "Expense"}",
++            style = MaterialTheme.typography.titleMedium,
+             fontWeight = FontWeight.Bold,
+-            color = Color.White,
+-            fontSize = 17.sp
++            color = Color.White
+           )
+         }
+       }
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/BackupSettingsScreen.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/BackupSettingsScreen.kt
+--- a/app/src/main/java/com/example/ui/screens/BackupSettingsScreen.kt	2026-11-11 10:29:39.475539662 +0300
++++ b/app/src/main/java/com/example/ui/screens/BackupSettingsScreen.kt	2026-11-11 10:32:30.608250307 +0300
+@@ -116,7 +116,7 @@
+   ) {
+     item {
+       Text(
+-        text = "Security & Cloud Sync",
++        text = "Vault",
+         style = MaterialTheme.typography.headlineSmall,
+         fontWeight = FontWeight.Bold,
+         color = MaterialTheme.colorScheme.onBackground,
+@@ -132,7 +132,7 @@
+     // Encrypted Backup & Google Drive Section
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -176,7 +176,7 @@
+           ) {
+             Button(
+               onClick = { showExportDialog = true },
+-              shape = RoundedCornerShape(14.dp),
++              shape = RoundedCornerShape(12.dp),
+               modifier = Modifier
+                 .weight(1f)
+                 .testTag("export_backup_button")
+@@ -188,7 +188,7 @@
+ 
+             Button(
+               onClick = { filePickerLauncher.launch("*/*") },
+-              shape = RoundedCornerShape(14.dp),
++              shape = RoundedCornerShape(12.dp),
+               colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+               modifier = Modifier
+                 .weight(1f)
+@@ -206,7 +206,7 @@
+     // App Preferences Section
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -246,7 +246,7 @@
+     // Security & Biometric Section
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -297,7 +297,7 @@
+     // Data Management & Clean Reset
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -341,7 +341,7 @@
+               containerColor = MaterialTheme.colorScheme.error,
+               contentColor = MaterialTheme.colorScheme.onError
+             ),
+-            shape = RoundedCornerShape(14.dp),
++            shape = RoundedCornerShape(12.dp),
+             modifier = Modifier.fillMaxWidth().testTag("clear_all_data_button")
+           ) {
+             Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
+@@ -355,7 +355,7 @@
+     // GDPR & Privacy Notice
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+         modifier = Modifier.fillMaxWidth()
+       ) {
+@@ -380,7 +380,6 @@
+             text = "M3Note operates 100% offline-first. Your financial entries, balances, and reports never leave your device unencrypted. Backups exported to Google Drive use client-side AES-256-GCM encryption with password key derivation (PBKDF2), ensuring zero-knowledge privacy.",
+             style = MaterialTheme.typography.bodySmall,
+             color = MaterialTheme.colorScheme.onSurfaceVariant,
+-            fontSize = 12.sp,
+             lineHeight = 17.sp
+           )
+         }
+@@ -473,7 +472,7 @@
+       text = {
+         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+           Text(
+-            text = "Enter the password you used when creating this myMoneymanager backup to decrypt and restore your data:",
++            text = "Enter the password you used when creating this M3Note backup to decrypt and restore your data:",
+             style = MaterialTheme.typography.bodySmall
+           )
+           OutlinedTextField(
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/BudgetsScreen.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/BudgetsScreen.kt
+--- a/app/src/main/java/com/example/ui/screens/BudgetsScreen.kt	2026-11-11 10:29:39.475614144 +0300
++++ b/app/src/main/java/com/example/ui/screens/BudgetsScreen.kt	2026-11-11 10:30:35.406115624 +0300
+@@ -65,7 +65,12 @@
+ import com.example.data.model.CategoryEntity
+ import com.example.data.model.MonthlyBudgetEntity
+ import com.example.ui.components.CategoryIconHelper
++import com.example.ui.theme.expenseColors
++import com.example.ui.theme.incomeColors
++import com.example.ui.theme.warningColors
+ import com.example.ui.viewmodel.BudgetProgressItem
++import java.text.SimpleDateFormat
++import java.util.Locale
+ 
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+@@ -86,6 +91,15 @@
+   val totalBudget = budgetProgressList.sumOf { it.limit }
+   val totalSpent = budgetProgressList.sumOf { it.spent }
+   val overallPct = if (totalBudget > 0) ((totalSpent / totalBudget) * 100).toInt() else 0
++  val overallStatus = when {
++    overallPct >= 100 -> expenseColors()
++    overallPct >= 75 -> warningColors()
++    else -> incomeColors()
++  }
++  val monthLabel = remember(monthYear) {
++    val parser = SimpleDateFormat("yyyy-MM", Locale.getDefault())
++    SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(parser.parse(monthYear)!!)
++  }
+ 
+   Scaffold(
+     floatingActionButton = {
+@@ -93,7 +107,6 @@
+         onClick = { showAddDialog = true },
+         containerColor = MaterialTheme.colorScheme.primary,
+         contentColor = MaterialTheme.colorScheme.onPrimary,
+-        shape = CircleShape,
+         modifier = Modifier.testTag("fab_add_budget")
+       ) {
+         Icon(
+@@ -127,7 +140,7 @@
+             color = MaterialTheme.colorScheme.onBackground
+           )
+           Text(
+-            text = "Track goals & get real-time threshold alerts",
++            text = "$monthLabel \u2022 Track goals & get threshold alerts",
+             style = MaterialTheme.typography.bodySmall,
+             color = MaterialTheme.colorScheme.onSurfaceVariant
+           )
+@@ -147,7 +160,7 @@
+ 
+       // Summary Gauge Card
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -174,21 +187,13 @@
+ 
+             Surface(
+               shape = RoundedCornerShape(12.dp),
+-              color = when {
+-                overallPct >= 100 -> Color(0xFFFCE8E6)
+-                overallPct >= 75 -> Color(0xFFFEF7E0)
+-                else -> Color(0xFFE6F4EA)
+-              }
++              color = overallStatus.container
+             ) {
+               Text(
+                 text = "$overallPct%",
+                 style = MaterialTheme.typography.titleMedium,
+                 fontWeight = FontWeight.Bold,
+-                color = when {
+-                  overallPct >= 100 -> Color(0xFFC5221F)
+-                  overallPct >= 75 -> Color(0xFFB06000)
+-                  else -> Color(0xFF137333)
+-                },
++                color = overallStatus.onContainer,
+                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+               )
+             }
+@@ -203,11 +208,7 @@
+ 
+           LinearProgressIndicator(
+             progress = { animProgress },
+-            color = when {
+-              overallPct >= 100 -> Color(0xFFEA4335)
+-              overallPct >= 75 -> Color(0xFFF29900)
+-              else -> Color(0xFF0F9D58)
+-            },
++            color = overallStatus.main,
+             trackColor = MaterialTheme.colorScheme.surfaceVariant,
+             modifier = Modifier
+               .fillMaxWidth()
+@@ -270,8 +271,14 @@
+               MaterialTheme.colorScheme.primary
+             }
+ 
++            val status = when {
++              item.isOverBudget -> expenseColors()
++              item.isWarning -> warningColors()
++              else -> incomeColors()
++            }
++
+             Card(
+-              shape = RoundedCornerShape(18.dp),
++              shape = RoundedCornerShape(16.dp),
+               colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+               elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+               modifier = Modifier.fillMaxWidth()
+@@ -316,11 +323,7 @@
+                     // Status Badge
+                     Surface(
+                       shape = RoundedCornerShape(8.dp),
+-                      color = when {
+-                        item.isOverBudget -> Color(0xFFFCE8E6)
+-                        item.isWarning -> Color(0xFFFEF7E0)
+-                        else -> Color(0xFFE6F4EA)
+-                      }
++                      color = status.container
+                     ) {
+                       Row(
+                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+@@ -333,11 +336,7 @@
+                             else -> Icons.Default.CheckCircle
+                           },
+                           contentDescription = null,
+-                          tint = when {
+-                            item.isOverBudget -> Color(0xFFC5221F)
+-                            item.isWarning -> Color(0xFFB06000)
+-                            else -> Color(0xFF137333)
+-                          },
++                          tint = status.onContainer,
+                           modifier = Modifier.size(14.dp)
+                         )
+                         Spacer(modifier = Modifier.width(4.dp))
+@@ -345,11 +344,7 @@
+                           text = "${item.percentage}%",
+                           style = MaterialTheme.typography.labelSmall,
+                           fontWeight = FontWeight.Bold,
+-                          color = when {
+-                            item.isOverBudget -> Color(0xFFC5221F)
+-                            item.isWarning -> Color(0xFFB06000)
+-                            else -> Color(0xFF137333)
+-                          }
++                          color = status.onContainer
+                         )
+                       }
+                     }
+@@ -379,11 +374,7 @@
+ 
+                 LinearProgressIndicator(
+                   progress = { itemProgress },
+-                  color = when {
+-                    item.isOverBudget -> Color(0xFFEA4335)
+-                    item.isWarning -> Color(0xFFF29900)
+-                    else -> Color(0xFF0F9D58)
+-                  },
++                  color = status.main,
+                   trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                   modifier = Modifier
+                     .fillMaxWidth()
+@@ -435,7 +426,7 @@
+               modifier = Modifier
+                 .menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable)
+                 .fillMaxWidth(),
+-              shape = RoundedCornerShape(14.dp)
++              shape = RoundedCornerShape(12.dp)
+             )
+             ExposedDropdownMenu(
+               expanded = expanded,
+@@ -459,7 +450,7 @@
+             onValueChange = { limitInput = it.filter { c -> c.isDigit() || c == '.' } },
+             label = { Text("Monthly Limit ($currencySymbol)") },
+             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+-            shape = RoundedCornerShape(14.dp),
++            shape = RoundedCornerShape(12.dp),
+             modifier = Modifier.fillMaxWidth()
+           )
+ 
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/DashboardScreen.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/DashboardScreen.kt
+--- a/app/src/main/java/com/example/ui/screens/DashboardScreen.kt	2026-11-11 10:29:39.475678242 +0300
++++ b/app/src/main/java/com/example/ui/screens/DashboardScreen.kt	2026-11-11 10:30:13.284361796 +0300
+@@ -28,7 +28,6 @@
+ import androidx.compose.material.icons.filled.PieChart
+ import androidx.compose.material.icons.filled.Savings
+ import androidx.compose.material.icons.filled.Security
+-import androidx.compose.foundation.isSystemInDarkTheme
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.ButtonDefaults
+ import androidx.compose.material3.Card
+@@ -49,7 +48,6 @@
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ import com.example.data.model.AccountEntity
+ import com.example.data.model.CategoryEntity
+ import com.example.data.model.RecurringAlertEntity
+@@ -60,6 +58,10 @@
+ import com.example.ui.components.CategorySlice
+ import com.example.ui.components.MonthlyComparisonBarChart
+ import com.example.ui.components.MonthlyTrendItem
++import com.example.ui.theme.ExpenseRed
++import com.example.ui.theme.IncomeGreen
++import com.example.ui.theme.expenseColors
++import com.example.ui.theme.incomeColors
+ import java.text.SimpleDateFormat
+ import java.util.Date
+ import java.util.Locale
+@@ -100,6 +102,8 @@
+   val totalIncome = monthTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+   val totalExpense = monthTransactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+   val netSavings = totalIncome - totalExpense
++  val income = incomeColors()
++  val expense = expenseColors()
+ 
+   LazyColumn(
+     modifier = modifier
+@@ -143,7 +147,6 @@
+                 Text(
+                   text = "AES-256",
+                   style = MaterialTheme.typography.labelSmall,
+-                  fontSize = 10.sp,
+                   fontWeight = FontWeight.Bold,
+                   color = MaterialTheme.colorScheme.primary
+                 )
+@@ -151,7 +154,7 @@
+             }
+           }
+           Text(
+-            text = "MyMoneyManager Vault",
++            text = "Encrypted finance vault",
+             style = MaterialTheme.typography.bodySmall,
+             color = MaterialTheme.colorScheme.onSurfaceVariant
+           )
+@@ -208,9 +211,9 @@
+     item {
+       Card(
+         modifier = Modifier.fillMaxWidth(),
+-        shape = RoundedCornerShape(26.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
++        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+       ) {
+         Box(
+           modifier = Modifier
+@@ -256,20 +259,11 @@
+               text = "${if (netSavings >= 0) "+" else ""}$currencySymbol${String.format("%,.2f", netSavings)}",
+               style = MaterialTheme.typography.headlineLarge,
+               fontWeight = FontWeight.Bold,
+-              color = if (netSavings >= 0) Color(0xFF0F9D58) else Color(0xFFEA4335)
++              color = if (netSavings >= 0) income.main else expense.main
+             )
+ 
+             Spacer(modifier = Modifier.height(16.dp))
+ 
+-            val isDark = isSystemInDarkTheme()
+-            val incomePillBg = if (isDark) Color(0xFF132B1C) else Color(0xFFE6F4EA)
+-            val incomePillText = if (isDark) Color(0xFF81C995) else Color(0xFF137333)
+-            val incomeIconBg = if (isDark) Color(0xFF0F9D58) else Color(0xFF0F9D58)
+-
+-            val expensePillBg = if (isDark) Color(0xFF3B1E1D) else Color(0xFFFCE8E6)
+-            val expensePillText = if (isDark) Color(0xFFF28B82) else Color(0xFFC5221F)
+-            val expenseIconBg = if (isDark) Color(0xFFEA4335) else Color(0xFFEA4335)
+-
+             // Income / Expense Dual Summary Pills
+             Row(
+               modifier = Modifier.fillMaxWidth(),
+@@ -278,7 +272,7 @@
+               // Income Pill
+               Surface(
+                 shape = RoundedCornerShape(16.dp),
+-                color = incomePillBg,
++                color = income.container,
+                 modifier = Modifier.weight(1f)
+               ) {
+                 Row(
+@@ -288,7 +282,7 @@
+                   Box(
+                     modifier = Modifier
+                       .size(32.dp)
+-                      .background(incomeIconBg, CircleShape),
++                      .background(IncomeGreen, CircleShape),
+                     contentAlignment = Alignment.Center
+                   ) {
+                     Icon(
+@@ -303,13 +297,13 @@
+                     Text(
+                       text = "Income",
+                       style = MaterialTheme.typography.labelSmall,
+-                      color = incomePillText
++                      color = income.onContainer
+                     )
+                     Text(
+                       text = "$currencySymbol${String.format("%,.1f", totalIncome)}",
+                       style = MaterialTheme.typography.bodyMedium,
+                       fontWeight = FontWeight.Bold,
+-                      color = incomePillText
++                      color = income.onContainer
+                     )
+                   }
+                 }
+@@ -318,7 +312,7 @@
+               // Expense Pill
+               Surface(
+                 shape = RoundedCornerShape(16.dp),
+-                color = expensePillBg,
++                color = expense.container,
+                 modifier = Modifier.weight(1f)
+               ) {
+                 Row(
+@@ -328,7 +322,7 @@
+                   Box(
+                     modifier = Modifier
+                       .size(32.dp)
+-                      .background(expenseIconBg, CircleShape),
++                      .background(ExpenseRed, CircleShape),
+                     contentAlignment = Alignment.Center
+                   ) {
+                     Icon(
+@@ -343,13 +337,13 @@
+                     Text(
+                       text = "Expense",
+                       style = MaterialTheme.typography.labelSmall,
+-                      color = expensePillText
++                      color = expense.onContainer
+                     )
+                     Text(
+                       text = "$currencySymbol${String.format("%,.1f", totalExpense)}",
+                       style = MaterialTheme.typography.bodyMedium,
+                       fontWeight = FontWeight.Bold,
+-                      color = expensePillText
++                      color = expense.onContainer
+                     )
+                   }
+                 }
+@@ -363,7 +357,7 @@
+     // Quick Action Bar
+     item {
+       Card(
+-        shape = RoundedCornerShape(22.dp),
++        shape = RoundedCornerShape(24.dp),
+         colors = CardDefaults.cardColors(
+           containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+         ),
+@@ -408,7 +402,7 @@
+     if (activeAlerts.isNotEmpty()) {
+       item {
+         Card(
+-          shape = RoundedCornerShape(18.dp),
++          shape = RoundedCornerShape(16.dp),
+           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)),
+           modifier = Modifier.fillMaxWidth()
+         ) {
+@@ -520,7 +514,7 @@
+     }
+ 
+     item {
+-      Spacer(modifier = Modifier.height(32.dp))
++      Spacer(modifier = Modifier.height(72.dp))
+     }
+   }
+ }
+@@ -541,9 +535,10 @@
+ 
+   val dateStr = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(transaction.timestamp))
+   val isIncome = transaction.type == TransactionType.INCOME
++  val amountColor = if (isIncome) incomeColors().main else expenseColors().main
+ 
+   Card(
+-    shape = RoundedCornerShape(18.dp),
++    shape = RoundedCornerShape(16.dp),
+     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+     modifier = Modifier.fillMaxWidth()
+@@ -558,7 +553,7 @@
+       Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+         Box(
+           modifier = Modifier
+-            .size(42.dp)
++            .size(44.dp)
+             .background(catColor.copy(alpha = 0.15f), CircleShape),
+           contentAlignment = Alignment.Center
+         ) {
+@@ -566,7 +561,7 @@
+             imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
+             contentDescription = null,
+             tint = catColor,
+-            modifier = Modifier.size(22.dp)
++            modifier = Modifier.size(24.dp)
+           )
+         }
+         Spacer(modifier = Modifier.width(12.dp))
+@@ -599,17 +594,16 @@
+           text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", transaction.amount)}",
+           style = MaterialTheme.typography.titleMedium,
+           fontWeight = FontWeight.Bold,
+-          color = if (isIncome) Color(0xFF0F9D58) else Color(0xFFEA4335)
++          color = amountColor
+         )
+         if (transaction.isRecurring) {
+           Surface(
+-            shape = RoundedCornerShape(4.dp),
++            shape = RoundedCornerShape(8.dp),
+             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+           ) {
+             Text(
+               text = "Recurring",
+               style = MaterialTheme.typography.labelSmall,
+-              fontSize = 9.sp,
+               color = MaterialTheme.colorScheme.primary,
+               modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+             )
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/InitialSecuritySetupScreen.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/InitialSecuritySetupScreen.kt
+--- a/app/src/main/java/com/example/ui/screens/InitialSecuritySetupScreen.kt	2026-11-11 10:29:39.475733970 +0300
++++ b/app/src/main/java/com/example/ui/screens/InitialSecuritySetupScreen.kt	2026-11-11 10:32:49.256891000 +0300
+@@ -42,7 +42,6 @@
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextAlign
+@@ -172,21 +171,21 @@
+ 
+         // 6 PIN Dots
+         Row(
+-          horizontalArrangement = Arrangement.spacedBy(14.dp),
++          horizontalArrangement = Arrangement.spacedBy(16.dp),
+           verticalAlignment = Alignment.CenterVertically
+         ) {
+           repeat(6) { index ->
+             val filled = index < currentPin.length
+             Box(
+               modifier = Modifier
+-                .size(18.dp)
++                .size(16.dp)
+                 .background(
+-                  color = if (filled) MaterialTheme.colorScheme.primary else Color.Transparent,
++                  color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                   shape = CircleShape
+                 )
+                 .border(
+-                  width = 2.dp,
+-                  color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
++                  width = 1.5.dp,
++                  color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                   shape = CircleShape
+                 )
+             )
+@@ -282,8 +281,8 @@
+                     Icon(
+                       imageVector = Icons.AutoMirrored.Filled.Backspace,
+                       contentDescription = "Backspace",
+-                      tint = MaterialTheme.colorScheme.onBackground,
+-                      modifier = Modifier.size(24.dp)
++                      tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                      modifier = Modifier.size(26.dp)
+                     )
+                   }
+                 }
+@@ -313,16 +312,16 @@
+                     modifier = Modifier
+                       .size(68.dp)
+                       .clip(CircleShape)
+-                      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
++                      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                       .clickable { handleDigitInput(key) }
+                       .testTag("setup_key_$key"),
+                     contentAlignment = Alignment.Center
+                   ) {
+                     Text(
+                       text = key,
+-                      style = MaterialTheme.typography.headlineMedium,
++                      style = MaterialTheme.typography.headlineSmall,
+                       fontWeight = FontWeight.SemiBold,
+-                      color = MaterialTheme.colorScheme.onBackground
++                      color = MaterialTheme.colorScheme.onSurface
+                     )
+                   }
+                 }
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/screens/TransactionsScreen.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/screens/TransactionsScreen.kt
+--- a/app/src/main/java/com/example/ui/screens/TransactionsScreen.kt	2026-11-11 10:29:39.475789818 +0300
++++ b/app/src/main/java/com/example/ui/screens/TransactionsScreen.kt	2026-11-11 10:30:35.403522748 +0300
+@@ -48,7 +48,8 @@
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
++import com.example.ui.theme.expenseColors
++import com.example.ui.theme.incomeColors
+ import com.example.data.model.CategoryEntity
+ import com.example.data.model.TransactionEntity
+ import com.example.data.model.TransactionType
+@@ -94,7 +95,6 @@
+         onClick = onOpenAddTransaction,
+         containerColor = MaterialTheme.colorScheme.primary,
+         contentColor = MaterialTheme.colorScheme.onPrimary,
+-        shape = CircleShape,
+         modifier = Modifier.testTag("fab_add_transaction")
+       ) {
+         Icon(
+@@ -234,7 +234,7 @@
+             val dateStr = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault()).format(Date(item.timestamp))
+ 
+             Card(
+-              shape = RoundedCornerShape(18.dp),
++              shape = RoundedCornerShape(16.dp),
+               colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+               elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+               modifier = Modifier.fillMaxWidth()
+@@ -287,7 +287,6 @@
+                         text = item.note,
+                         style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                        fontSize = 11.sp,
+                         maxLines = 1
+                       )
+                     }
+@@ -300,17 +299,16 @@
+                       text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", item.amount)}",
+                       style = MaterialTheme.typography.titleMedium,
+                       fontWeight = FontWeight.Bold,
+-                      color = if (isIncome) Color(0xFF0F9D58) else Color(0xFFEA4335)
++                      color = if (isIncome) incomeColors().main else expenseColors().main
+                     )
+                     if (item.isRecurring) {
+                       Surface(
+-                        shape = RoundedCornerShape(4.dp),
++                        shape = RoundedCornerShape(8.dp),
+                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                       ) {
+                         Text(
+                           text = "Recurring",
+                           style = MaterialTheme.typography.labelSmall,
+-                          fontSize = 9.sp,
+                           color = MaterialTheme.colorScheme.primary,
+                           modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                         )
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/theme/Color.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/theme/Color.kt
+--- a/app/src/main/java/com/example/ui/theme/Color.kt	2026-11-11 10:29:39.475858479 +0300
++++ b/app/src/main/java/com/example/ui/theme/Color.kt	2026-11-11 10:29:39.544240963 +0300
+@@ -36,6 +36,14 @@
+ val WarningAmber = Color(0xFFF29900)
+ val WarningAmberLight = Color(0xFFFEF7E0)
+ 
++val OnIncomeGreenLight = Color(0xFF137333)
++val IncomeGreenContainerDark = Color(0xFF132B1C)
++val OnExpenseRedLight = Color(0xFFC5221F)
++val ExpenseRedContainerDark = Color(0xFF3B1E1D)
++val OnWarningAmberLight = Color(0xFFB06000)
++val OnWarningAmberDark = Color(0xFFFDD663)
++val WarningAmberContainerDark = Color(0xFF3A2E10)
++
+ // Surfaces & Backgrounds
+ val BackgroundLight = Color(0xFFF8F9FA)
+ val SurfaceLight = Color(0xFFFFFFFF)
+diff -ruN '--exclude=*.apk' '--exclude=build' orig/app/src/main/java/com/example/ui/theme/Theme.kt proj/MyMoneyManager-main/app/src/main/java/com/example/ui/theme/Theme.kt
+--- a/app/src/main/java/com/example/ui/theme/Theme.kt	2026-11-11 10:29:39.475937089 +0300
++++ b/app/src/main/java/com/example/ui/theme/Theme.kt	2026-11-11 10:29:39.544422739 +0300
+@@ -8,6 +8,7 @@
+ import androidx.compose.material3.dynamicLightColorScheme
+ import androidx.compose.material3.lightColorScheme
+ import androidx.compose.runtime.Composable
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.platform.LocalContext
+ 
+ private val DarkColorScheme = darkColorScheme(
+@@ -62,6 +63,23 @@
+   )
+ }
+ 
++class StatusColors(val main: Color, val container: Color, val onContainer: Color)
++
++@Composable
++fun incomeColors(darkTheme: Boolean = isSystemInDarkTheme()) =
++  if (darkTheme) StatusColors(IncomeGreenDark, IncomeGreenContainerDark, IncomeGreenDark)
++  else StatusColors(IncomeGreen, IncomeGreenLight, OnIncomeGreenLight)
++
++@Composable
++fun expenseColors(darkTheme: Boolean = isSystemInDarkTheme()) =
++  if (darkTheme) StatusColors(ExpenseRedDark, ExpenseRedContainerDark, ExpenseRedDark)
++  else StatusColors(ExpenseRed, ExpenseRedLight, OnExpenseRedLight)
++
++@Composable
++fun warningColors(darkTheme: Boolean = isSystemInDarkTheme()) =
++  if (darkTheme) StatusColors(WarningAmber, WarningAmberContainerDark, OnWarningAmberDark)
++  else StatusColors(WarningAmber, WarningAmberLight, OnWarningAmberLight)
++
+ @Composable
+ fun ExpenseWiseTheme(
+   darkTheme: Boolean = isSystemInDarkTheme(),

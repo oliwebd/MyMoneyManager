@@ -188,6 +188,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
   }
 
   fun toggleSecurity(enabled: Boolean) {
+    if (enabled && !repository.securityPrefs.hasPin()) {
+      repository.securityPrefs.setSecurityEnabled(false)
+      _securityEnabled.value = false
+      showMessage("Please set a PIN before enabling security lock.")
+      return
+    }
     repository.securityPrefs.setSecurityEnabled(enabled)
     _securityEnabled.value = enabled
     if (!enabled) {

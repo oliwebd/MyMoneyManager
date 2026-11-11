@@ -6,3 +6,8 @@ plugins {
   alias(libs.plugins.secrets) apply false
   alias(libs.plugins.google.services) apply false
 }
+
+tasks.named<Wrapper>("wrapper") {
+  gradleVersion = "9.3.1"
+}
+

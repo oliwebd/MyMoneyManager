@@ -167,11 +167,6 @@ fun AuthLockScreen(
             fontWeight = FontWeight.Medium
           )
         }
-        Text(
-          text = "Default PIN: 123456",
-          style = MaterialTheme.typography.labelSmall,
-          color = MaterialTheme.colorScheme.outline
-        )
       }
 
       // Keypad

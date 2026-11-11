@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +55,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
@@ -73,6 +71,10 @@ import com.example.data.model.TransactionType
 import com.example.ui.components.AutoSuggestTextField
 import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.TouchAdjustmentScroller
+import com.example.ui.theme.ExpenseRed
+import com.example.ui.theme.IncomeGreen
+import com.example.ui.theme.expenseColors
+import com.example.ui.theme.incomeColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,14 +100,12 @@ fun AddTransactionSheet(
   var title by remember { mutableStateOf("") }
   var amountText by remember { mutableStateOf("0.00") }
   var amountValue by remember { mutableDoubleStateOf(0.0) }
-  var isTypingDirectly by remember { mutableStateOf(false) }
 
   var selectedCategoryId by remember(categories, selectedType) {
     val filtered = categories.filter { if (selectedType == TransactionType.EXPENSE) it.isExpense else !it.isExpense }
     mutableLongStateOf(filtered.firstOrNull()?.id ?: 1L)
   }
   var selectedAccountId by remember(accounts) {
-    // Default to Main Bank Checking or first account to match screenshot
     val defaultAcc = accounts.find { it.name.contains("Bank", ignoreCase = true) } ?: accounts.firstOrNull()
     mutableLongStateOf(defaultAcc?.id ?: 1L)
   }
@@ -113,10 +113,8 @@ fun AddTransactionSheet(
   var isRecurring by remember { mutableStateOf(false) }
   var recurringInterval by remember { mutableStateOf(RecurringInterval.MONTHLY) }
 
-  // Neon theme colors matching user screenshot
-  val neonRed = Color(0xFFFF334B)
-  val neonGreen = Color(0xFF00E676)
-  val accentColor = if (selectedType == TransactionType.EXPENSE) neonRed else neonGreen
+  val accentColor = if (selectedType == TransactionType.EXPENSE) expenseColors().main else incomeColors().main
+  val fillColor = if (selectedType == TransactionType.EXPENSE) ExpenseRed else IncomeGreen
 
   fun updateAmount(newVal: Double) {
     val clamped = maxOf(0.0, newVal)
@@ -127,8 +125,7 @@ fun AddTransactionSheet(
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = Color(0xFF0F1015),
-    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     dragHandle = null
   ) {
     Column(
@@ -137,7 +134,7 @@ fun AddTransactionSheet(
         .padding(horizontal = 18.dp, vertical = 16.dp)
         .verticalScroll(rememberScrollState())
     ) {
-      // 1. TOP HEADER - Image 2: Amount ($) & Close (X)
+      // 1. TOP HEADER - Amount ($) & Close (X)
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -149,7 +146,7 @@ fun AddTransactionSheet(
           Icon(
             imageVector = Icons.Default.AccountBalanceWallet,
             contentDescription = null,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(26.dp)
           )
           Spacer(modifier = Modifier.width(10.dp))
@@ -157,8 +154,7 @@ fun AddTransactionSheet(
             text = "Amount ($currencySymbol)",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = 22.sp
+            color = MaterialTheme.colorScheme.onSurface
           )
         }
 
@@ -166,7 +162,7 @@ fun AddTransactionSheet(
           modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(Color(0xFF26272E))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onDismiss)
             .testTag("close_sheet_button"),
           contentAlignment = Alignment.Center
@@ -174,7 +170,7 @@ fun AddTransactionSheet(
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(20.dp)
           )
         }
@@ -185,7 +181,7 @@ fun AddTransactionSheet(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(16.dp))
-          .background(Color(0xFF1E1F26))
+          .background(MaterialTheme.colorScheme.surfaceVariant)
           .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
       ) {
@@ -195,7 +191,7 @@ fun AddTransactionSheet(
             .weight(1f)
             .height(40.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isExpense) neonRed else Color.Transparent)
+            .background(if (isExpense) ExpenseRed else Color.Transparent)
             .clickable { selectedType = TransactionType.EXPENSE }
             .testTag("type_expense_tab"),
           contentAlignment = Alignment.Center
@@ -204,15 +200,15 @@ fun AddTransactionSheet(
             Icon(
               imageVector = Icons.Default.ArrowDownward,
               contentDescription = null,
-              tint = Color.White,
+              tint = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "Expense",
+              style = MaterialTheme.typography.labelLarge,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
-              fontSize = 14.sp
+              color = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
           }
         }
@@ -223,7 +219,7 @@ fun AddTransactionSheet(
             .weight(1f)
             .height(40.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isIncome) neonGreen else Color.Transparent)
+            .background(if (isIncome) IncomeGreen else Color.Transparent)
             .clickable { selectedType = TransactionType.INCOME }
             .testTag("type_income_tab"),
           contentAlignment = Alignment.Center
@@ -232,15 +228,15 @@ fun AddTransactionSheet(
             Icon(
               imageVector = Icons.Default.ArrowUpward,
               contentDescription = null,
-              tint = Color.White,
+              tint = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "Income",
+              style = MaterialTheme.typography.labelLarge,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
-              fontSize = 14.sp
+              color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
           }
         }
@@ -248,16 +244,16 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // 2. GIANT AMOUNT DISPLAY CARD - Image 2
+      // 2. GIANT AMOUNT DISPLAY CARD
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .clip(RoundedCornerShape(26.dp))
-          .background(Color(0xFF181920))
+          .clip(RoundedCornerShape(24.dp))
+          .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
           .border(
             width = 1.8.dp,
             color = accentColor,
-            shape = RoundedCornerShape(26.dp)
+            shape = RoundedCornerShape(24.dp)
           )
           .padding(vertical = 24.dp, horizontal = 20.dp),
         contentAlignment = Alignment.Center
@@ -267,7 +263,6 @@ fun AddTransactionSheet(
           horizontalArrangement = Arrangement.Center,
           modifier = Modifier.fillMaxWidth()
         ) {
-          // Large Red Currency Symbol
           Text(
             text = currencySymbol,
             fontSize = 44.sp,
@@ -277,17 +272,15 @@ fun AddTransactionSheet(
 
           Spacer(modifier = Modifier.width(14.dp))
 
-          // Vertical divider line
           Box(
             modifier = Modifier
               .width(1.5.dp)
               .height(48.dp)
-              .background(Color(0x33FFFFFF))
+              .background(MaterialTheme.colorScheme.outline)
           )
 
           Spacer(modifier = Modifier.width(14.dp))
 
-          // Editable Amount Field
           BasicTextField(
             value = amountText,
             onValueChange = { input ->
@@ -298,7 +291,7 @@ fun AddTransactionSheet(
             textStyle = TextStyle(
               fontSize = 48.sp,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
+              color = MaterialTheme.colorScheme.onSurface,
               textAlign = TextAlign.Start
             ),
             singleLine = true,
@@ -313,7 +306,7 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      // 3. STEPPERS & TOUCH CYLINDER PANEL - Image 2
+      // 3. STEPPERS & TOUCH CYLINDER PANEL
       TouchAdjustmentScroller(
         currentAmount = amountValue,
         onAmountChanged = { updateAmount(it) },
@@ -341,7 +334,7 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(18.dp))
 
-      // 4. CATEGORY SECTION - Image 1 (2-Column Grid with Vibrant Icons and Neon Selection)
+      // 4. CATEGORY SECTION
       Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -349,7 +342,7 @@ fun AddTransactionSheet(
         Icon(
           imageVector = Icons.Default.GridView,
           contentDescription = null,
-          tint = Color.White,
+          tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(10.dp))
@@ -357,8 +350,7 @@ fun AddTransactionSheet(
           text = "Category",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
-          color = Color.White,
-          fontSize = 19.sp
+          color = MaterialTheme.colorScheme.onSurface
         )
       }
 
@@ -368,7 +360,6 @@ fun AddTransactionSheet(
         if (selectedType == TransactionType.EXPENSE) it.isExpense else !it.isExpense
       }
 
-      // 2-Column Grid of Category Pills
       Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth()
@@ -389,17 +380,17 @@ fun AddTransactionSheet(
               Box(
                 modifier = Modifier
                   .weight(1f)
-                  .height(52.dp)
-                  .clip(RoundedCornerShape(26.dp))
+                  .height(48.dp)
+                  .clip(RoundedCornerShape(24.dp))
                   .background(
-                    if (isSelected) accentColor.copy(alpha = 0.20f) else Color(0xFF202127)
+                    if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceVariant
                   )
                   .then(
                     if (isSelected) {
                       Modifier.border(
                         width = 1.8.dp,
                         color = accentColor,
-                        shape = RoundedCornerShape(26.dp)
+                        shape = RoundedCornerShape(24.dp)
                       )
                     } else Modifier
                   )
@@ -422,8 +413,7 @@ fun AddTransactionSheet(
                     text = category.name,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    color = Color.White,
-                    fontSize = 13.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                   )
                 }
@@ -438,10 +428,10 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(18.dp))
 
-      // 5. ACCOUNT / PAYMENT METHOD - Image 1
+      // 5. ACCOUNT / PAYMENT METHOD
       Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
       ) {
         Column(
@@ -453,16 +443,15 @@ fun AddTransactionSheet(
             Icon(
               imageVector = Icons.Default.CreditCard,
               contentDescription = null,
-              tint = Color.White,
+              tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
               text = "Account / Payment Method",
-              style = MaterialTheme.typography.titleSmall,
+              style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
-              fontSize = 16.sp
+              color = MaterialTheme.colorScheme.onSurface
             )
           }
 
@@ -482,13 +471,12 @@ fun AddTransactionSheet(
                   .weight(1f)
                   .height(48.dp)
               ) {
-                // Pill Container
                 Box(
                   modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(24.dp))
                     .background(
-                      if (isSelected) accentColor.copy(alpha = 0.20f) else Color(0xFF24252D)
+                      if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surface
                     )
                     .then(
                       if (isSelected) {
@@ -510,22 +498,20 @@ fun AddTransactionSheet(
                     Icon(
                       imageVector = accIcon,
                       contentDescription = null,
-                      tint = if (isSelected) accentColor else Color.White,
+                      tint = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
                       modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                       text = account.name,
-                      style = MaterialTheme.typography.bodyMedium,
+                      style = MaterialTheme.typography.labelMedium,
                       fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                      color = Color.White,
-                      fontSize = 12.5.sp,
+                      color = MaterialTheme.colorScheme.onSurface,
                       maxLines = 1
                     )
                   }
                 }
 
-                // Checkmark badge anchored top-right if selected (matches Image 1)
                 if (isSelected) {
                   Box(
                     modifier = Modifier
@@ -533,7 +519,7 @@ fun AddTransactionSheet(
                       .offset(x = 2.dp, y = (-2).dp)
                       .size(18.dp)
                       .clip(CircleShape)
-                      .background(accentColor),
+                      .background(fillColor),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
@@ -552,10 +538,10 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // 6. RECURRING TRANSACTION - Image 1
+      // 6. RECURRING TRANSACTION
       Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
       ) {
         Column(
@@ -575,7 +561,7 @@ fun AddTransactionSheet(
               Icon(
                 imageVector = Icons.Default.Repeat,
                 contentDescription = null,
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(24.dp)
               )
               Spacer(modifier = Modifier.width(12.dp))
@@ -584,14 +570,12 @@ fun AddTransactionSheet(
                   text = "Recurring Transaction",
                   style = MaterialTheme.typography.bodyLarge,
                   fontWeight = FontWeight.Bold,
-                  color = Color.White,
-                  fontSize = 15.sp
+                  color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                   text = "Schedule automated alerts & reminders",
                   style = MaterialTheme.typography.bodySmall,
-                  color = Color(0xFF8E8E98),
-                  fontSize = 12.sp
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
             }
@@ -601,9 +585,7 @@ fun AddTransactionSheet(
               onCheckedChange = { isRecurring = it },
               colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = accentColor,
-                uncheckedThumbColor = Color(0xFF8E8E98),
-                uncheckedTrackColor = Color(0xFF2C2D35)
+                checkedTrackColor = fillColor
               ),
               modifier = Modifier.testTag("recurring_switch")
             )
@@ -623,15 +605,15 @@ fun AddTransactionSheet(
                     .weight(1f)
                     .height(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) accentColor else Color(0xFF24252D))
+                    .background(if (isSelected) fillColor else MaterialTheme.colorScheme.surface)
                     .clickable { recurringInterval = interval },
                   contentAlignment = Alignment.Center
                 ) {
                   Text(
                     text = interval.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = Color.White,
-                    fontSize = 12.sp
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                   )
                 }
               }
@@ -642,10 +624,10 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // 7. NOTE (OPTIONAL) - Image 1
+      // 7. NOTE (OPTIONAL)
       Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16171D)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
       ) {
         Row(
@@ -657,7 +639,7 @@ fun AddTransactionSheet(
           Icon(
             imageVector = Icons.Default.Description,
             contentDescription = null,
-            tint = Color(0xFF8E8E98),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(22.dp)
           )
           Spacer(modifier = Modifier.width(12.dp))
@@ -666,17 +648,13 @@ fun AddTransactionSheet(
               Text(
                 text = "Note (Optional)",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF8E8E98)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
               )
             }
             BasicTextField(
               value = note,
               onValueChange = { note = it },
-              textStyle = TextStyle(
-                fontSize = 15.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Normal
-              ),
+              textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
               cursorBrush = SolidColor(accentColor),
               singleLine = true,
               modifier = Modifier
@@ -689,19 +667,13 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(24.dp))
 
-      // 8. SAVE EXPENSE / SAVE INCOME BUTTON - Image 1 (Full width glowing red capsule)
+      // 8. SAVE EXPENSE / SAVE INCOME BUTTON
       Box(
         modifier = Modifier
           .fillMaxWidth()
           .height(56.dp)
           .clip(RoundedCornerShape(28.dp))
-          .background(
-            if (selectedType == TransactionType.EXPENSE) {
-              Brush.horizontalGradient(listOf(Color(0xFFFF2A4A), Color(0xFFFF483D)))
-            } else {
-              Brush.horizontalGradient(listOf(Color(0xFF00C853), Color(0xFF00E676)))
-            }
-          )
+          .background(fillColor)
           .clickable {
             val finalTitle = if (title.isBlank()) {
               val cat = categories.find { it.id == selectedCategoryId }
@@ -737,9 +709,9 @@ fun AddTransactionSheet(
           Spacer(modifier = Modifier.width(8.dp))
           Text(
             text = "Save ${if (selectedType == TransactionType.INCOME) "Income" else "Expense"}",
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = 17.sp
+            color = Color.White
           )
         }
       }

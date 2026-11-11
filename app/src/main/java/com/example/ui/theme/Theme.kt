@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -61,6 +62,23 @@ fun MyMoneyManagerTheme(
     content = content
   )
 }
+
+class StatusColors(val main: Color, val container: Color, val onContainer: Color)
+
+@Composable
+fun incomeColors(darkTheme: Boolean = isSystemInDarkTheme()) =
+  if (darkTheme) StatusColors(IncomeGreenDark, IncomeGreenContainerDark, IncomeGreenDark)
+  else StatusColors(IncomeGreen, IncomeGreenLight, OnIncomeGreenLight)
+
+@Composable
+fun expenseColors(darkTheme: Boolean = isSystemInDarkTheme()) =
+  if (darkTheme) StatusColors(ExpenseRedDark, ExpenseRedContainerDark, ExpenseRedDark)
+  else StatusColors(ExpenseRed, ExpenseRedLight, OnExpenseRedLight)
+
+@Composable
+fun warningColors(darkTheme: Boolean = isSystemInDarkTheme()) =
+  if (darkTheme) StatusColors(WarningAmber, WarningAmberContainerDark, OnWarningAmberDark)
+  else StatusColors(WarningAmber, WarningAmberLight, OnWarningAmberLight)
 
 @Composable
 fun ExpenseWiseTheme(

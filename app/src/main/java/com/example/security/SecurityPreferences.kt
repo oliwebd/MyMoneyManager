@@ -4,10 +4,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.security.MessageDigest
 import java.security.SecureRandom
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
-class SecurityPreferences(context: Context) {
-  private val prefs: SharedPreferences =
+class SecurityPreferences(
+  private val prefs: SharedPreferences
+) {
+  constructor(context: Context) : this(
     context.getSharedPreferences("m3note_security_prefs", Context.MODE_PRIVATE)
+  )
 
   companion object {
     private const val KEY_SETUP_DONE = "initial_setup_done"
@@ -15,8 +20,16 @@ class SecurityPreferences(context: Context) {
     private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
     private const val KEY_PIN_HASH = "pin_hash"
     private const val KEY_PIN_SALT = "pin_salt"
+    private const val KEY_PIN_ALGORITHM = "pin_algorithm"
+    private const val KEY_FAILED_ATTEMPTS = "pin_failed_attempts"
+    private const val KEY_LOCKOUT_UNTIL = "pin_lockout_until_ms"
     private const val KEY_BASE_CURRENCY = "base_currency"
     private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
+
+    private const val ALGORITHM_PBKDF2 = "PBKDF2WithHmacSHA256"
+    private const val PBKDF2_ITERATIONS = 600_000
+    private const val KEY_LENGTH_BITS = 256
+    private const val SALT_LENGTH_BYTES = 16
   }
 
   fun isSetupDone(): Boolean = prefs.getBoolean(KEY_SETUP_DONE, false)
@@ -49,36 +62,112 @@ class SecurityPreferences(context: Context) {
     prefs.edit().putString(KEY_BASE_CURRENCY, currencyCode).apply()
   }
 
+  fun hasPin(): Boolean {
+    val hash = prefs.getString(KEY_PIN_HASH, null)
+    return !hash.isNullOrBlank()
+  }
+
+  fun isLockedOut(): Boolean {
+    val lockoutUntil = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L)
+    return lockoutUntil > 0L && System.currentTimeMillis() < lockoutUntil
+  }
+
+  fun getRemainingLockoutSeconds(): Long {
+    val diff = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L) - System.currentTimeMillis()
+    return if (diff > 0) (diff + 999) / 1000 else 0L
+  }
+
+  fun getFailedAttempts(): Int = prefs.getInt(KEY_FAILED_ATTEMPTS, 0)
+
+  fun resetLockout() {
+    onAuthSuccess()
+  }
+
   fun setPin(pin: String) {
     val salt = generateSalt()
-    val hash = hashPin(pin, salt)
+    val hash = hashPinPbkdf2(pin, salt)
     prefs.edit()
-      .putString(KEY_PIN_SALT, salt)
-      .putString(KEY_PIN_HASH, hash)
+      .putString(KEY_PIN_SALT, bytesToHex(salt))
+      .putString(KEY_PIN_HASH, bytesToHex(hash))
+      .putString(KEY_PIN_ALGORITHM, ALGORITHM_PBKDF2)
+      .putInt(KEY_FAILED_ATTEMPTS, 0)
+      .putLong(KEY_LOCKOUT_UNTIL, 0L)
       .apply()
   }
 
   fun verifyPin(pin: String): Boolean {
+    if (isLockedOut()) {
+      return false
+    }
+
     val savedSalt = prefs.getString(KEY_PIN_SALT, null) ?: return false
     val savedHash = prefs.getString(KEY_PIN_HASH, null) ?: return false
-    val inputHash = hashPin(pin, savedSalt)
-    return savedHash == inputHash
+    val algorithm = prefs.getString(KEY_PIN_ALGORITHM, null)
+
+    if (algorithm == ALGORITHM_PBKDF2) {
+      val saltBytes = hexToBytes(savedSalt)
+      val expectedHash = hexToBytes(savedHash)
+      val computedHash = hashPinPbkdf2(pin, saltBytes)
+      val matched = MessageDigest.isEqual(computedHash, expectedHash)
+      if (matched) {
+        onAuthSuccess()
+        return true
+      } else {
+        onAuthFailure()
+        return false
+      }
+    } else {
+      val expectedHash = hexToBytes(savedHash)
+      val computedHash = hashPinLegacy(pin, savedSalt)
+      val matched = MessageDigest.isEqual(computedHash, expectedHash)
+      if (matched) {
+        setPin(pin)
+        return true
+      } else {
+        onAuthFailure()
+        return false
+      }
+    }
   }
 
-  private fun getPinHash(): String? = prefs.getString(KEY_PIN_HASH, null)
+  private fun onAuthSuccess() {
+    prefs.edit()
+      .putInt(KEY_FAILED_ATTEMPTS, 0)
+      .putLong(KEY_LOCKOUT_UNTIL, 0L)
+      .apply()
+  }
 
-  private fun generateSalt(): String {
+  private fun onAuthFailure() {
+    val attempts = prefs.getInt(KEY_FAILED_ATTEMPTS, 0) + 1
+    var lockoutUntil = 0L
+    if (attempts >= 3) {
+      val exponent = (attempts - 3).coerceAtMost(14)
+      val lockoutSeconds = 5L * (1L shl exponent)
+      lockoutUntil = System.currentTimeMillis() + (lockoutSeconds * 1000L)
+    }
+    prefs.edit()
+      .putInt(KEY_FAILED_ATTEMPTS, attempts)
+      .putLong(KEY_LOCKOUT_UNTIL, lockoutUntil)
+      .apply()
+  }
+
+  private fun generateSalt(): ByteArray {
     val random = SecureRandom()
-    val saltBytes = ByteArray(16)
+    val saltBytes = ByteArray(SALT_LENGTH_BYTES)
     random.nextBytes(saltBytes)
-    return bytesToHex(saltBytes)
+    return saltBytes
   }
 
-  private fun hashPin(pin: String, salt: String): String {
+  private fun hashPinPbkdf2(pin: String, salt: ByteArray): ByteArray {
+    val spec = PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH_BITS)
+    val factory = SecretKeyFactory.getInstance(ALGORITHM_PBKDF2)
+    return factory.generateSecret(spec).encoded
+  }
+
+  private fun hashPinLegacy(pin: String, salt: String): ByteArray {
     val md = MessageDigest.getInstance("SHA-256")
     md.update(salt.toByteArray())
-    val digest = md.digest(pin.toByteArray())
-    return bytesToHex(digest)
+    return md.digest(pin.toByteArray())
   }
 
   private fun bytesToHex(bytes: ByteArray): String {
@@ -90,5 +179,20 @@ class SecurityPreferences(context: Context) {
       hexChars[j * 2 + 1] = hexArray[v and 0x0F]
     }
     return String(hexChars)
+  }
+
+  private fun hexToBytes(hex: String): ByteArray {
+    if (hex.length % 2 != 0) return ByteArray(0)
+    val len = hex.length
+    val data = ByteArray(len / 2)
+    var i = 0
+    while (i < len) {
+      val high = Character.digit(hex[i], 16)
+      val low = Character.digit(hex[i + 1], 16)
+      if (high == -1 || low == -1) return ByteArray(0)
+      data[i / 2] = ((high shl 4) or low).toByte()
+      i += 2
+    }
+    return data
   }
 }

@@ -3,7 +3,14 @@ package com.example
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
+import android.security.keystore.KeyProperties
 import android.widget.Toast
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -16,6 +23,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -87,17 +95,70 @@ class MainActivity : FragmentActivity() {
     }
   }
 
+  companion object {
+    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+    private const val BIOMETRIC_KEY_ALIAS = "m3note_biometric_auth_key"
+  }
+
+  private fun getOrCreateBiometricKey(): SecretKey {
+    val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+    keyStore.load(null)
+    val existingKey = keyStore.getKey(BIOMETRIC_KEY_ALIAS, null) as? SecretKey
+    if (existingKey != null) {
+      return existingKey
+    }
+
+    val keyGenerator = KeyGenerator.getInstance(
+      KeyProperties.KEY_ALGORITHM_AES,
+      ANDROID_KEYSTORE
+    )
+    val spec = KeyGenParameterSpec.Builder(
+      BIOMETRIC_KEY_ALIAS,
+      KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+    )
+      .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+      .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+      .setUserAuthenticationRequired(true)
+      .build()
+    keyGenerator.init(spec)
+    return keyGenerator.generateKey()
+  }
+
+  private fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject {
+    val transformation = "${KeyProperties.KEY_ALGORITHM_AES}/${KeyProperties.BLOCK_MODE_CBC}/${KeyProperties.ENCRYPTION_PADDING_PKCS7}"
+    val cipher = Cipher.getInstance(transformation)
+    try {
+      val secretKey = getOrCreateBiometricKey()
+      cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+      return BiometricPrompt.CryptoObject(cipher)
+    } catch (e: KeyPermanentlyInvalidatedException) {
+      val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+      keyStore.load(null)
+      keyStore.deleteEntry(BIOMETRIC_KEY_ALIAS)
+      val newKey = getOrCreateBiometricKey()
+      cipher.init(Cipher.ENCRYPT_MODE, newKey)
+      return BiometricPrompt.CryptoObject(cipher)
+    }
+  }
+
   private fun showBiometricPrompt(
     onSuccess: () -> Unit,
     onFailure: (String) -> Unit
   ) {
     val biometricManager = BiometricManager.from(this)
     val canAuth = biometricManager.canAuthenticate(
-      BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+      BiometricManager.Authenticators.BIOMETRIC_STRONG
     )
 
     if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
       onFailure("Biometric authentication not configured or unavailable on this device.")
+      return
+    }
+
+    val cryptoObject = try {
+      createBiometricCryptoObject()
+    } catch (e: Exception) {
+      onFailure("Failed to initialize biometric security key: ${e.message}")
       return
     }
 
@@ -114,7 +175,12 @@ class MainActivity : FragmentActivity() {
       object : BiometricPrompt.AuthenticationCallback() {
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
           super.onAuthenticationSucceeded(result)
-          onSuccess()
+          val authenticatedCipher = result.cryptoObject?.cipher
+          if (authenticatedCipher != null) {
+            onSuccess()
+          } else {
+            onFailure("Biometric authentication verification failed.")
+          }
         }
 
         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -124,12 +190,11 @@ class MainActivity : FragmentActivity() {
 
         override fun onAuthenticationFailed() {
           super.onAuthenticationFailed()
-          // Failed fingerprint recognition
         }
       }
     )
 
-    biometricPrompt.authenticate(promptInfo)
+    biometricPrompt.authenticate(promptInfo, cryptoObject)
   }
 }
 
@@ -255,7 +320,7 @@ fun MyMoneyManagerApp(
           selected = currentScreen == AppScreen.TRANSACTIONS,
           onClick = { currentScreen = AppScreen.TRANSACTIONS },
           icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Transactions") },
-          label = { Text("Records") },
+          label = { Text("Transactions") },
           modifier = Modifier.testTag("nav_tab_transactions")
         )
         NavigationBarItem(
@@ -297,6 +362,7 @@ fun MyMoneyManagerApp(
       modifier = Modifier
         .fillMaxSize()
         .padding(innerPadding)
+        .consumeWindowInsets(innerPadding)
     ) {
       when (currentScreen) {
         AppScreen.DASHBOARD -> {

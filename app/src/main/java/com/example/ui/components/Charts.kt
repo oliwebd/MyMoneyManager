@@ -58,6 +58,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.CategoryEntity
+import com.example.ui.theme.ExpenseRed
+import com.example.ui.theme.ExpenseRedDark
+import com.example.ui.theme.IncomeGreen
+import com.example.ui.theme.IncomeGreenDark
+import com.example.ui.theme.expenseColors
+import com.example.ui.theme.incomeColors
 import kotlin.math.atan2
 
 data class CategorySlice(
@@ -158,6 +164,7 @@ fun CategoryDonutChart(
                   val dy = offset.y - center.y
                   var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
                   if (angle < 0) angle += 360f
+                  angle = (angle + 90f) % 360f
 
                   var currentAngle = 0f
                   var matched: Int? = null
@@ -235,7 +242,6 @@ fun CategoryDonutChart(
               Text(
                 text = "Tap slice for details",
                 style = MaterialTheme.typography.labelSmall,
-                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.outline
               )
             }
@@ -351,9 +357,9 @@ fun MonthlyComparisonBarChart(
           FilterChip(
             selected = selectedChartStyle == ChartStyle.BAR_COLUMNS,
             onClick = { selectedChartStyle = ChartStyle.BAR_COLUMNS; touchedItemIndex = null },
-            label = { Text("Bars", fontSize = 11.sp) },
+            label = { Text("Bars", style = MaterialTheme.typography.labelSmall) },
             leadingIcon = { Icon(Icons.Default.BarChart, contentDescription = null, modifier = Modifier.size(14.dp)) },
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = FilterChipDefaults.filterChipColors(
               selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
               selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -362,9 +368,9 @@ fun MonthlyComparisonBarChart(
           FilterChip(
             selected = selectedChartStyle == ChartStyle.SPLINE_AREA,
             onClick = { selectedChartStyle = ChartStyle.SPLINE_AREA; touchedItemIndex = null },
-            label = { Text("Curve", fontSize = 11.sp) },
+            label = { Text("Curve", style = MaterialTheme.typography.labelSmall) },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(14.dp)) },
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = FilterChipDefaults.filterChipColors(
               selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
               selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -384,7 +390,7 @@ fun MonthlyComparisonBarChart(
         val touched = touchedItemIndex?.let { trends.getOrNull(it) }
         if (touched != null) {
           Surface(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier
               .fillMaxWidth()
@@ -408,20 +414,20 @@ fun MonthlyComparisonBarChart(
                   text = "In: +$currencySymbol${String.format("%.0f", touched.income)}",
                   style = MaterialTheme.typography.labelSmall,
                   fontWeight = FontWeight.Bold,
-                  color = Color(0xFF0F9D58)
+                  color = incomeColors().main
                 )
                 Text(
                   text = "Out: -$currencySymbol${String.format("%.0f", touched.expense)}",
                   style = MaterialTheme.typography.labelSmall,
                   fontWeight = FontWeight.Bold,
-                  color = Color(0xFFEA4335)
+                  color = expenseColors().main
                 )
                 val net = touched.income - touched.expense
                 Text(
                   text = "Net: ${if (net >= 0) "+" else ""}$currencySymbol${String.format("%.0f", net)}",
                   style = MaterialTheme.typography.labelSmall,
                   fontWeight = FontWeight.Bold,
-                  color = if (net >= 0) Color(0xFF0F9D58) else Color(0xFFEA4335)
+                  color = if (net >= 0) incomeColors().main else expenseColors().main
                 )
               }
             }
@@ -501,7 +507,7 @@ fun MonthlyComparisonBarChart(
 
                 drawRoundRect(
                   brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF81C995), Color(0xFF0F9D58))
+                    colors = listOf(IncomeGreenDark, IncomeGreen)
                   ),
                   topLeft = Offset(incX, incY),
                   size = Size(barWidth, incBarHeight),
@@ -515,7 +521,7 @@ fun MonthlyComparisonBarChart(
 
                 drawRoundRect(
                   brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF28B82), Color(0xFFEA4335))
+                    colors = listOf(ExpenseRedDark, ExpenseRed)
                   ),
                   topLeft = Offset(expX, expY),
                   size = Size(barWidth, expBarHeight),
@@ -550,7 +556,7 @@ fun MonthlyComparisonBarChart(
               drawPath(
                 path = incAreaPath,
                 brush = Brush.verticalGradient(
-                  colors = listOf(Color(0xFF0F9D58).copy(alpha = 0.25f), Color(0xFF0F9D58).copy(alpha = 0.02f)),
+                  colors = listOf(IncomeGreen.copy(alpha = 0.25f), IncomeGreen.copy(alpha = 0.02f)),
                   startY = 0f,
                   endY = bottomY
                 )
@@ -558,7 +564,7 @@ fun MonthlyComparisonBarChart(
 
               drawPath(
                 path = incPath,
-                color = Color(0xFF0F9D58),
+                color = IncomeGreen,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
               )
 
@@ -574,7 +580,7 @@ fun MonthlyComparisonBarChart(
               drawPath(
                 path = expAreaPath,
                 brush = Brush.verticalGradient(
-                  colors = listOf(Color(0xFFEA4335).copy(alpha = 0.20f), Color(0xFFEA4335).copy(alpha = 0.02f)),
+                  colors = listOf(ExpenseRed.copy(alpha = 0.20f), ExpenseRed.copy(alpha = 0.02f)),
                   startY = 0f,
                   endY = bottomY
                 )
@@ -582,19 +588,19 @@ fun MonthlyComparisonBarChart(
 
               drawPath(
                 path = expPath,
-                color = Color(0xFFEA4335),
+                color = ExpenseRed,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
               )
 
               // Draw Data Point Dots
               incomePoints.forEach { pt ->
                 drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pt)
-                drawCircle(color = Color(0xFF0F9D58), radius = 3.5.dp.toPx(), center = pt)
+                drawCircle(color = IncomeGreen, radius = 3.5.dp.toPx(), center = pt)
               }
 
               expensePoints.forEach { pt ->
                 drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pt)
-                drawCircle(color = Color(0xFFEA4335), radius = 3.5.dp.toPx(), center = pt)
+                drawCircle(color = ExpenseRed, radius = 3.5.dp.toPx(), center = pt)
               }
             }
           }
@@ -643,6 +649,6 @@ private fun buildSplinePath(points: List<Offset>): Path {
 
 private val MaterialTheme.styleOfChartTitle
   @Composable get() = MaterialTheme.typography.titleMedium.copy(
-    fontWeight = FontWeight.SemiBold,
+    fontWeight = FontWeight.Bold,
     letterSpacing = 0.15.sp
   )

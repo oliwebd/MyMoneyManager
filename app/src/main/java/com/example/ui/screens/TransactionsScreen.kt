@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -234,59 +237,104 @@ fun TransactionsScreen(
             val dateStr = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault()).format(Date(item.timestamp))
 
             Card(
-              shape = RoundedCornerShape(18.dp),
-              colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-              elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+              shape = RoundedCornerShape(22.dp),
+              colors = CardDefaults.cardColors(containerColor = Color(0xFF13141B)),
+              elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
               modifier = Modifier.fillMaxWidth()
             ) {
               Row(
                 modifier = Modifier
                   .fillMaxWidth()
-                  .padding(14.dp),
+                  .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
               ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                // Left & Center Column
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  modifier = Modifier.weight(1f)
+                ) {
+                  // Glowing Circular Category Icon
                   Box(
                     modifier = Modifier
-                      .size(44.dp)
-                      .background(catColor.copy(alpha = 0.15f), CircleShape),
+                      .size(52.dp)
+                      .background(catColor.copy(alpha = 0.22f), CircleShape),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
                       imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
                       contentDescription = null,
                       tint = catColor,
-                      modifier = Modifier.size(24.dp)
+                      modifier = Modifier.size(26.dp)
                     )
                   }
-                  Spacer(modifier = Modifier.width(12.dp))
+
+                  Spacer(modifier = Modifier.width(14.dp))
+
                   Column {
+                    // Title
                     Text(
                       text = item.title,
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.SemiBold,
-                      color = MaterialTheme.colorScheme.onSurface,
+                      style = MaterialTheme.typography.titleMedium,
+                      fontWeight = FontWeight.Bold,
+                      color = Color.White,
+                      fontSize = 17.sp,
                       maxLines = 1
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Category Pill Badge
+                    Surface(
+                      shape = RoundedCornerShape(12.dp),
+                      color = catColor.copy(alpha = 0.22f)
+                    ) {
+                      Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        Icon(
+                          imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
+                          contentDescription = null,
+                          tint = catColor,
+                          modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                          text = cat?.name ?: "General",
+                          style = MaterialTheme.typography.labelSmall,
+                          color = catColor,
+                          fontWeight = FontWeight.SemiBold,
+                          fontSize = 12.sp
+                        )
+                      }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Calendar & Timestamp
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                      Text(
-                        text = cat?.name ?: "General",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = catColor,
-                        fontWeight = FontWeight.Medium
+                      Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        tint = Color(0xFF8E8E98),
+                        modifier = Modifier.size(12.dp)
                       )
+                      Spacer(modifier = Modifier.width(4.dp))
                       Text(
-                        text = " • $dateStr",
+                        text = dateStr,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFFA0A0AB),
+                        fontSize = 11.5.sp
                       )
                     }
+
                     if (item.note.isNotBlank()) {
+                      Spacer(modifier = Modifier.height(2.dp))
                       Text(
                         text = item.note,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color(0xFF8E8E98),
                         fontSize = 11.sp,
                         maxLines = 1
                       )
@@ -294,40 +342,34 @@ fun TransactionsScreen(
                   }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                  Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                      text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", item.amount)}",
-                      style = MaterialTheme.typography.titleMedium,
-                      fontWeight = FontWeight.Bold,
-                      color = if (isIncome) Color(0xFF0F9D58) else Color(0xFFEA4335)
-                    )
-                    if (item.isRecurring) {
-                      Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                      ) {
-                        Text(
-                          text = "Recurring",
-                          style = MaterialTheme.typography.labelSmall,
-                          fontSize = 9.sp,
-                          color = MaterialTheme.colorScheme.primary,
-                          modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                      }
-                    }
-                  }
+                Spacer(modifier = Modifier.width(10.dp))
 
-                  Spacer(modifier = Modifier.width(6.dp))
-                  IconButton(
-                    onClick = { transactionToDelete = item },
-                    modifier = Modifier.size(36.dp).testTag("delete_transaction_${item.id}")
+                // Right: Amount and Trash Action Button
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Text(
+                    text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", item.amount)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isIncome) Color(0xFF00E676) else Color(0xFFFF3B47),
+                    fontSize = 17.5.sp
+                  )
+
+                  Spacer(modifier = Modifier.width(10.dp))
+
+                  Box(
+                    modifier = Modifier
+                      .size(38.dp)
+                      .clip(RoundedCornerShape(12.dp))
+                      .background(Color(0xFF22242D))
+                      .clickable { transactionToDelete = item }
+                      .testTag("delete_transaction_${item.id}"),
+                    contentAlignment = Alignment.Center
                   ) {
                     Icon(
-                      Icons.Default.Delete,
+                      imageVector = Icons.Default.Delete,
                       contentDescription = "Delete",
-                      tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                      modifier = Modifier.size(20.dp)
+                      tint = Color(0xFFC8C8D4),
+                      modifier = Modifier.size(18.dp)
                     )
                   }
                 }

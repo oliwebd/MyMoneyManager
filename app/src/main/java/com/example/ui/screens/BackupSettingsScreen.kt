@@ -116,7 +116,7 @@ fun BackupSettingsScreen(
   ) {
     item {
       Text(
-        text = "Security & Cloud Sync",
+        text = "Vault",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onBackground,
@@ -132,7 +132,7 @@ fun BackupSettingsScreen(
     // Encrypted Backup & Google Drive Section
     item {
       Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
@@ -176,7 +176,7 @@ fun BackupSettingsScreen(
           ) {
             Button(
               onClick = { showExportDialog = true },
-              shape = RoundedCornerShape(14.dp),
+              shape = RoundedCornerShape(12.dp),
               modifier = Modifier
                 .weight(1f)
                 .testTag("export_backup_button")
@@ -188,7 +188,7 @@ fun BackupSettingsScreen(
 
             Button(
               onClick = { filePickerLauncher.launch("*/*") },
-              shape = RoundedCornerShape(14.dp),
+              shape = RoundedCornerShape(12.dp),
               colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
               modifier = Modifier
                 .weight(1f)
@@ -206,7 +206,7 @@ fun BackupSettingsScreen(
     // App Preferences Section
     item {
       Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
@@ -246,7 +246,7 @@ fun BackupSettingsScreen(
     // Security & Biometric Section
     item {
       Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()

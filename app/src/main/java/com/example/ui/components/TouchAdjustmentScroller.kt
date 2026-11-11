@@ -47,7 +47,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 
 @Composable
@@ -55,13 +54,14 @@ fun TouchAdjustmentScroller(
   currentAmount: Double,
   onAmountChanged: (Double) -> Unit,
   modifier: Modifier = Modifier,
-  accentColor: Color = Color(0xFFFF334B)
+  accentColor: Color = MaterialTheme.colorScheme.primary
 ) {
   var dragAccumulator by remember { mutableFloatStateOf(0f) }
   var isDragging by remember { mutableStateOf(false) }
 
-  val pillBackground = Color(0xFF23242A)
-  val infoCardBackground = Color(0xFF1B1C22)
+  val pillBackground = MaterialTheme.colorScheme.surfaceVariant
+  val infoCardBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+  val emphasisColor = MaterialTheme.colorScheme.onSurface
 
   Column(
     modifier = modifier.fillMaxWidth(),
@@ -76,23 +76,23 @@ fun TouchAdjustmentScroller(
       verticalAlignment = Alignment.CenterVertically
     ) {
       // Negative steps
-      DarkStepPill(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
-      DarkStepPill(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
-      DarkStepPill(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
+      StepPill(label = "-100", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 100)) })
+      StepPill(label = "-10", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 10)) })
+      StepPill(label = "-1", onClick = { onAmountChanged(maxOf(0.0, currentAmount - 1)) })
 
       // Center Neon Touch Cylinder
       Box(
         modifier = Modifier
           .width(82.dp)
           .height(58.dp)
-          .clip(RoundedCornerShape(22.dp))
+          .clip(RoundedCornerShape(24.dp))
           .background(
             if (isDragging) accentColor.copy(alpha = 0.28f) else accentColor.copy(alpha = 0.16f)
           )
           .border(
             width = 1.6.dp,
             color = accentColor,
-            shape = RoundedCornerShape(22.dp)
+            shape = RoundedCornerShape(24.dp)
           )
           .draggable(
             orientation = Orientation.Vertical,
@@ -134,7 +134,6 @@ fun TouchAdjustmentScroller(
             text = "Touch",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            fontSize = 11.sp,
             color = accentColor
           )
           Icon(
@@ -147,7 +146,7 @@ fun TouchAdjustmentScroller(
       }
 
       // Positive steps
-      DarkStepPill(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
+      StepPill(label = "+1", onClick = { onAmountChanged(currentAmount + 1) })
 
       // Vertical Stepper Pill (+ 10 -)
       Box(
@@ -173,7 +172,7 @@ fun TouchAdjustmentScroller(
             Icon(
               imageVector = Icons.Default.Add,
               contentDescription = "+10",
-              tint = Color(0xFFC0C0CC),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.size(14.dp)
             )
           }
@@ -181,8 +180,7 @@ fun TouchAdjustmentScroller(
             text = "10",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
           )
           Box(
             modifier = Modifier
@@ -193,7 +191,7 @@ fun TouchAdjustmentScroller(
             Icon(
               imageVector = Icons.Default.Remove,
               contentDescription = "-10",
-              tint = Color(0xFFC0C0CC),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.size(14.dp)
             )
           }
@@ -205,7 +203,7 @@ fun TouchAdjustmentScroller(
 
     // Info Hint Banner Matching Image 2
     Surface(
-      shape = RoundedCornerShape(18.dp),
+      shape = RoundedCornerShape(16.dp),
       color = infoCardBackground,
       modifier = Modifier.fillMaxWidth()
     ) {
@@ -218,20 +216,19 @@ fun TouchAdjustmentScroller(
         Icon(
           imageVector = Icons.Default.Info,
           contentDescription = null,
-          tint = Color(0xFF8E8E98),
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
           text = buildAnnotatedString {
             append("Drag the cylinder up/down or tap steps for ")
-            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = emphasisColor)) {
               append("micro-adjustment")
             }
           },
           style = MaterialTheme.typography.bodySmall,
-          color = Color(0xFFA0A0AF),
-          fontSize = 11.5.sp,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.weight(1f)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -239,7 +236,7 @@ fun TouchAdjustmentScroller(
           modifier = Modifier
             .width(1.dp)
             .height(24.dp)
-            .background(Color(0x22FFFFFF))
+            .background(MaterialTheme.colorScheme.outline)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
@@ -254,14 +251,14 @@ fun TouchAdjustmentScroller(
 }
 
 @Composable
-private fun DarkStepPill(
+private fun StepPill(
   label: String,
   onClick: () -> Unit
 ) {
   Box(
     modifier = Modifier
       .clip(RoundedCornerShape(16.dp))
-      .background(Color(0xFF23242A))
+      .background(MaterialTheme.colorScheme.surfaceVariant)
       .clickable(onClick = onClick)
       .padding(horizontal = 11.dp, vertical = 14.dp)
       .testTag("step_chip_$label"),
@@ -271,8 +268,7 @@ private fun DarkStepPill(
       text = label,
       style = MaterialTheme.typography.labelMedium,
       fontWeight = FontWeight.Bold,
-      color = Color.White,
-      fontSize = 13.sp
+      color = MaterialTheme.colorScheme.onSurface
     )
   }
 }

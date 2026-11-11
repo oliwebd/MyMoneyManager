@@ -36,6 +36,14 @@ val ExpenseRedDark = Color(0xFFF28B82)
 val WarningAmber = Color(0xFFF29900)
 val WarningAmberLight = Color(0xFFFEF7E0)
 
+val OnIncomeGreenLight = Color(0xFF137333)
+val IncomeGreenContainerDark = Color(0xFF132B1C)
+val OnExpenseRedLight = Color(0xFFC5221F)
+val ExpenseRedContainerDark = Color(0xFF3B1E1D)
+val OnWarningAmberLight = Color(0xFFB06000)
+val OnWarningAmberDark = Color(0xFFFDD663)
+val WarningAmberContainerDark = Color(0xFF3A2E10)
+
 // Surfaces & Backgrounds
 val BackgroundLight = Color(0xFFF8F9FA)
 val SurfaceLight = Color(0xFFFFFFFF)

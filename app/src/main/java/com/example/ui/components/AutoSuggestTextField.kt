@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 data class SuggestionPreset(
   val title: String,
@@ -187,13 +186,12 @@ fun AutoSuggestTextField(
                 if (suggestion.categoryName.isNotBlank()) {
                   Spacer(modifier = Modifier.width(6.dp))
                   Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
                   ) {
                     Text(
                       text = suggestion.categoryName,
                       style = MaterialTheme.typography.labelSmall,
-                      fontSize = 10.sp,
                       color = MaterialTheme.colorScheme.onSurfaceVariant,
                       modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
