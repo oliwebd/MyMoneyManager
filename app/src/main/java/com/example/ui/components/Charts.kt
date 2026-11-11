@@ -151,7 +151,7 @@ fun CategoryDonutChart(
       } else {
         // Doughnut Canvas
         Box(
-          modifier = Modifier.size(210.dp),
+          modifier = Modifier.size(190.dp),
           contentAlignment = Alignment.Center
         ) {
           Canvas(
@@ -180,7 +180,7 @@ fun CategoryDonutChart(
                 }
               }
           ) {
-            val strokeWidth = 38.dp.toPx()
+            val strokeWidth = 30.dp.toPx()
             val diameter = size.minDimension - strokeWidth
             val arcSize = Size(diameter, diameter)
             val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
@@ -217,7 +217,7 @@ fun CategoryDonutChart(
               )
               Text(
                 text = "$currencySymbol${String.format("%.2f", displaySlice.amount)}",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
               )
@@ -235,7 +235,7 @@ fun CategoryDonutChart(
               )
               Text(
                 text = "$currencySymbol${String.format("%,.0f", totalAmount)}",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
               )

@@ -34,8 +34,8 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -333,7 +333,7 @@ fun MyMoneyManagerApp(
         NavigationBarItem(
           selected = currentScreen == AppScreen.SETTINGS,
           onClick = { currentScreen = AppScreen.SETTINGS },
-          icon = { Icon(Icons.Default.Security, contentDescription = "Sync & Security") },
+          icon = { Icon(Icons.Default.Shield, contentDescription = "Sync & Security") },
           label = { Text("Vault") },
           modifier = Modifier.testTag("nav_tab_settings")
         )
@@ -341,7 +341,7 @@ fun MyMoneyManagerApp(
     },
     floatingActionButton = {
       if (currentScreen == AppScreen.DASHBOARD) {
-        FloatingActionButton(
+        SmallFloatingActionButton(
           onClick = { showAddSheet = true },
           containerColor = MaterialTheme.colorScheme.primary,
           contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -351,7 +351,7 @@ fun MyMoneyManagerApp(
             imageVector = Icons.Default.Add,
             contentDescription = "Add Transaction",
             tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(24.dp)
           )
         }
       }

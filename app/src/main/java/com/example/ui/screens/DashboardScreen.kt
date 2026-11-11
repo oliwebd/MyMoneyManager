@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -121,7 +121,7 @@ fun DashboardScreen(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
               text = "M3Note",
-              style = MaterialTheme.typography.titleLarge,
+              style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.onBackground
             )
@@ -135,7 +135,7 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Icon(
-                  imageVector = Icons.Default.Security,
+                  imageVector = Icons.Default.Shield,
                   contentDescription = null,
                   tint = MaterialTheme.colorScheme.primary,
                   modifier = Modifier.size(12.dp)
@@ -161,13 +161,15 @@ fun DashboardScreen(
         IconButton(
           onClick = onLockApp,
           modifier = Modifier
+            .size(36.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
             .testTag("lock_app_button")
         ) {
           Icon(
             imageVector = Icons.Default.Lock,
             contentDescription = "Lock App",
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
           )
         }
       }
@@ -183,12 +185,12 @@ fun DashboardScreen(
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          IconButton(onClick = onPrevMonth, modifier = Modifier.testTag("prev_month_button")) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month")
+          IconButton(onClick = onPrevMonth, modifier = Modifier.size(36.dp).testTag("prev_month_button")) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month", modifier = Modifier.size(20.dp))
           }
 
           Text(
@@ -198,8 +200,8 @@ fun DashboardScreen(
             color = MaterialTheme.colorScheme.onSurface
           )
 
-          IconButton(onClick = onNextMonth, modifier = Modifier.testTag("next_month_button")) {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month")
+          IconButton(onClick = onNextMonth, modifier = Modifier.size(36.dp).testTag("next_month_button")) {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month", modifier = Modifier.size(20.dp))
           }
         }
       }
@@ -209,7 +211,7 @@ fun DashboardScreen(
     item {
       Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
       ) {
@@ -224,7 +226,7 @@ fun DashboardScreen(
                 )
               )
             )
-            .padding(20.dp)
+            .padding(16.dp)
         ) {
           Column {
             Row(
@@ -255,12 +257,12 @@ fun DashboardScreen(
 
             Text(
               text = "${if (netSavings >= 0) "+" else ""}$currencySymbol${String.format("%,.2f", netSavings)}",
-              style = MaterialTheme.typography.headlineLarge,
+              style = MaterialTheme.typography.headlineMedium,
               fontWeight = FontWeight.Bold,
               color = if (netSavings >= 0) Color(0xFF0F9D58) else Color(0xFFEA4335)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             val isDark = isSystemInDarkTheme()
             val incomePillBg = if (isDark) Color(0xFF132B1C) else Color(0xFFE6F4EA)
@@ -364,7 +366,7 @@ fun DashboardScreen(
     // Quick Action Bar
     item {
       Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
           containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
@@ -373,7 +375,7 @@ fun DashboardScreen(
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = 8.dp, horizontal = 8.dp),
           horizontalArrangement = Arrangement.SpaceEvenly,
           verticalAlignment = Alignment.CenterVertically
         ) {
@@ -394,7 +396,7 @@ fun DashboardScreen(
             testTag = "quick_budgets_button"
           )
           QuickActionItem(
-            icon = Icons.Default.Security,
+            icon = Icons.Default.Shield,
             label = "Vault",
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -544,8 +546,8 @@ fun TransactionRowItem(
   val isIncome = transaction.type == TransactionType.INCOME
 
   Card(
-    shape = RoundedCornerShape(22.dp),
-    colors = CardDefaults.cardColors(containerColor = Color(0xFF13141B)),
+    shape = RoundedCornerShape(20.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth()
   ) {
@@ -559,7 +561,7 @@ fun TransactionRowItem(
       Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
         Box(
           modifier = Modifier
-            .size(52.dp)
+            .size(40.dp)
             .background(catColor.copy(alpha = 0.22f), CircleShape),
           contentAlignment = Alignment.Center
         ) {
@@ -567,7 +569,7 @@ fun TransactionRowItem(
             imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
             contentDescription = null,
             tint = catColor,
-            modifier = Modifier.size(26.dp)
+            modifier = Modifier.size(20.dp)
           )
         }
 
@@ -578,8 +580,8 @@ fun TransactionRowItem(
             text = transaction.title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = 17.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 15.sp,
             maxLines = 1
           )
 
@@ -616,14 +618,14 @@ fun TransactionRowItem(
             Icon(
               imageVector = Icons.Default.CalendarToday,
               contentDescription = null,
-              tint = Color(0xFF8E8E98),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
               modifier = Modifier.size(12.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
               text = dateStr,
               style = MaterialTheme.typography.labelSmall,
-              color = Color(0xFFA0A0AB),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
               fontSize = 11.5.sp
             )
           }
@@ -636,8 +638,8 @@ fun TransactionRowItem(
         text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", transaction.amount)}",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = if (isIncome) Color(0xFF00E676) else Color(0xFFFF3B47),
-        fontSize = 17.5.sp
+        color = if (isIncome) Color(0xFF0F9D58) else Color(0xFFEA4335),
+        fontSize = 15.sp
       )
     }
   }
@@ -657,12 +659,12 @@ private fun QuickActionItem(
     modifier = Modifier
       .clip(RoundedCornerShape(16.dp))
       .clickable(onClick = onClick)
-      .padding(horizontal = 12.dp, vertical = 6.dp)
+      .padding(horizontal = 12.dp, vertical = 4.dp)
       .testTag(testTag)
   ) {
     Box(
       modifier = Modifier
-        .size(48.dp)
+        .size(40.dp)
         .background(color = containerColor, shape = CircleShape),
       contentAlignment = Alignment.Center
     ) {
@@ -670,7 +672,7 @@ private fun QuickActionItem(
         imageVector = icon,
         contentDescription = label,
         tint = contentColor,
-        modifier = Modifier.size(24.dp)
+        modifier = Modifier.size(20.dp)
       )
     }
     Spacer(modifier = Modifier.height(6.dp))
