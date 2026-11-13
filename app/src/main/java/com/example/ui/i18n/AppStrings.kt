@@ -54,6 +54,8 @@ data class AppStrings(
 
   // Add Transaction
   val addTransaction: String = "Add Transaction",
+  val quickAdd: String = "Quick Add",
+  val amountLabel: String = "Amount",
   val saveEntry: String = "Save Entry",
 
   // Vault & Settings

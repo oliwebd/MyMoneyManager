@@ -32,13 +32,14 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -47,6 +48,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -75,6 +77,7 @@ import com.example.ui.screens.BackupSettingsScreen
 import com.example.ui.screens.BudgetsScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.InitialSecuritySetupScreen
+import com.example.ui.screens.QuickAddTransactionModal
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.theme.MyMoneyManagerTheme
 import com.example.ui.viewmodel.FinanceViewModel
@@ -246,6 +249,7 @@ fun MyMoneyManagerApp(
 
   var currentScreen by remember { mutableStateOf(AppScreen.DASHBOARD) }
   var showAddSheet by remember { mutableStateOf(false) }
+  var showQuickAddModal by remember { mutableStateOf(false) }
   val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val snackbarHostState = remember { SnackbarHostState() }
   val coroutineScope = rememberCoroutineScope()
@@ -374,15 +378,18 @@ fun MyMoneyManagerApp(
     },
     floatingActionButton = {
       if (currentScreen == AppScreen.DASHBOARD) {
-        SmallFloatingActionButton(
-          onClick = { showAddSheet = true },
+        FloatingActionButton(
+          onClick = { showQuickAddModal = true },
+          shape = RoundedCornerShape(16.dp),
           containerColor = MaterialTheme.colorScheme.primary,
           contentColor = MaterialTheme.colorScheme.onPrimary,
-          modifier = Modifier.testTag("dashboard_fab_add")
+          modifier = Modifier
+            .minimumInteractiveComponentSize()
+            .testTag("dashboard_fab_add")
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "Add Transaction",
+            contentDescription = strings.quickAdd,
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.size(24.dp)
           )
@@ -495,6 +502,27 @@ fun MyMoneyManagerApp(
             onPickedUriHandled = { pickedImportUri = null }
           )
         }
+      }
+
+      // Quick Add Transaction Modal (Dashboard FAB)
+      if (showQuickAddModal) {
+        QuickAddTransactionModal(
+          categories = categories,
+          accounts = accounts,
+          recentTitles = recentTitles,
+          currencySymbol = viewModel.currencySymbol,
+          onDismiss = { showQuickAddModal = false },
+          onSave = { title, amount, type, categoryId, accountId ->
+            viewModel.addTransaction(
+              title = title,
+              amount = amount,
+              type = type,
+              categoryId = categoryId,
+              accountId = accountId
+            )
+            showQuickAddModal = false
+          }
+        )
       }
 
       // Add Transaction Sheet Modal
