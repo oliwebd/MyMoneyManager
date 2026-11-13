@@ -39,7 +39,8 @@ data class AppStrings(
 
   // Transactions
   val allTransactions: String = "All Transactions",
-  val searchTransactions: String = "Search transactions, payees...",
+  val searchTransactions: String = "Search title, category, or date...",
+  val dateRange: String = "Date Range",
   val filterAll: String = "All",
   val filterExpenses: String = "Expenses",
   val filterIncome: String = "Income",

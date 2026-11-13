@@ -113,6 +113,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
   private val _filterCategoryId = MutableStateFlow<Long?>(null)
   val filterCategoryId: StateFlow<Long?> = _filterCategoryId.asStateFlow()
 
+  private val _filterDateRange = MutableStateFlow<Pair<Long, Long>?>(null)
+  val filterDateRange: StateFlow<Pair<Long, Long>?> = _filterDateRange.asStateFlow()
+
   // Message toast / banner
   private val _userMessage = MutableStateFlow<String?>(null)
   val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
@@ -135,6 +138,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
   fun setFilterCategoryId(id: Long?) {
     _filterCategoryId.value = id
+  }
+
+  fun setFilterDateRange(range: Pair<Long, Long>?) {
+    _filterDateRange.value = range
   }
 
   fun setSelectedMonthYear(monthYear: String) {

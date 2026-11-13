@@ -242,6 +242,7 @@ fun MyMoneyManagerApp(
   val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
   val filterType by viewModel.filterType.collectAsStateWithLifecycle()
   val filterCategoryId by viewModel.filterCategoryId.collectAsStateWithLifecycle()
+  val filterDateRange by viewModel.filterDateRange.collectAsStateWithLifecycle()
 
   var currentScreen by remember { mutableStateOf(AppScreen.DASHBOARD) }
   var showAddSheet by remember { mutableStateOf(false) }
@@ -430,6 +431,8 @@ fun MyMoneyManagerApp(
             onTypeFilterChanged = { viewModel.setFilterType(it) },
             selectedCategoryId = filterCategoryId,
             onCategoryFilterChanged = { viewModel.setFilterCategoryId(it) },
+            selectedDateRange = filterDateRange,
+            onDateRangeFilterChanged = { viewModel.setFilterDateRange(it) },
             onDeleteTransaction = { viewModel.deleteTransaction(it) },
             onOpenAddTransaction = { showAddSheet = true }
           )

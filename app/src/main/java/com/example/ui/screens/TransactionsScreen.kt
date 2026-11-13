@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,10 +20,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +53,106 @@ import com.example.data.model.CategoryEntity
 import com.example.data.model.TransactionEntity
 import com.example.data.model.TransactionType
 import com.example.ui.i18n.LocalAppStrings
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
+internal fun filterTransactions(
+  transactions: List<TransactionEntity>,
+  categories: List<CategoryEntity>,
+  searchQuery: String,
+  selectedTypeFilter: TransactionType?,
+  selectedCategoryId: Long?,
+  selectedDateRange: Pair<Long, Long>?
+): List<TransactionEntity> {
+  val trimmedQuery = searchQuery.trim()
+  val categoryNames = categories.associate { it.id to it.name }
+  val displayDateFormat = if (trimmedQuery.isNotEmpty()) {
+    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+  } else null
+  val isoDateFormat = if (trimmedQuery.isNotEmpty()) {
+    SimpleDateFormat("yyyy-MM-dd", Locale.US)
+  } else null
+
+  return transactions.filter { item ->
+    val categoryName = categoryNames[item.categoryId].orEmpty()
+    val matchesSearch = if (trimmedQuery.isEmpty()) {
+      true
+    } else {
+      val dateText = displayDateFormat!!.format(Date(item.timestamp))
+      val isoDateText = isoDateFormat!!.format(Date(item.timestamp))
+      item.title.contains(trimmedQuery, ignoreCase = true) ||
+        item.note.contains(trimmedQuery, ignoreCase = true) ||
+        categoryName.contains(trimmedQuery, ignoreCase = true) ||
+        dateText.contains(trimmedQuery, ignoreCase = true) ||
+        isoDateText.contains(trimmedQuery, ignoreCase = true)
+    }
+
+    val matchesType = selectedTypeFilter == null || item.type == selectedTypeFilter
+    val matchesCat = selectedCategoryId == null || item.categoryId == selectedCategoryId
+    val matchesDate = selectedDateRange == null ||
+      (item.timestamp >= selectedDateRange.first && item.timestamp <= selectedDateRange.second)
+
+    matchesSearch && matchesType && matchesCat && matchesDate
+  }
+}
+
+internal fun utcDateRangeToLocalBounds(
+  startUtcMillis: Long,
+  endUtcMillis: Long,
+  localTimeZone: TimeZone = TimeZone.getDefault()
+): Pair<Long, Long> {
+  val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+
+  utcCal.timeInMillis = startUtcMillis
+  val startLocal = Calendar.getInstance(localTimeZone).apply {
+    set(
+      utcCal.get(Calendar.YEAR),
+      utcCal.get(Calendar.MONTH),
+      utcCal.get(Calendar.DAY_OF_MONTH),
+      0, 0, 0
+    )
+    set(Calendar.MILLISECOND, 0)
+  }
+
+  utcCal.timeInMillis = endUtcMillis
+  val endLocal = Calendar.getInstance(localTimeZone).apply {
+    set(
+      utcCal.get(Calendar.YEAR),
+      utcCal.get(Calendar.MONTH),
+      utcCal.get(Calendar.DAY_OF_MONTH),
+      23, 59, 59
+    )
+    set(Calendar.MILLISECOND, 999)
+  }
+
+  return if (startLocal.timeInMillis <= endLocal.timeInMillis) {
+    startLocal.timeInMillis to endLocal.timeInMillis
+  } else {
+    endLocal.timeInMillis to startLocal.timeInMillis
+  }
+}
+
+internal fun localMillisToUtcDateMillis(
+  localMillis: Long,
+  localTimeZone: TimeZone = TimeZone.getDefault()
+): Long {
+  val localCal = Calendar.getInstance(localTimeZone).apply {
+    timeInMillis = localMillis
+  }
+  return Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+    clear()
+    set(
+      localCal.get(Calendar.YEAR),
+      localCal.get(Calendar.MONTH),
+      localCal.get(Calendar.DAY_OF_MONTH)
+    )
+  }.timeInMillis
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
   transactions: List<TransactionEntity>,
@@ -58,24 +164,43 @@ fun TransactionsScreen(
   onTypeFilterChanged: (TransactionType?) -> Unit,
   selectedCategoryId: Long?,
   onCategoryFilterChanged: (Long?) -> Unit,
+  selectedDateRange: Pair<Long, Long>? = null,
+  onDateRangeFilterChanged: (Pair<Long, Long>?) -> Unit = {},
   onDeleteTransaction: (TransactionEntity) -> Unit,
   onOpenAddTransaction: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   val strings = LocalAppStrings.current
   var transactionToDelete by remember { mutableStateOf<TransactionEntity?>(null) }
+  var showDateRangeDialog by remember { mutableStateOf(false) }
 
   // Filtered transactions
-  val filteredTransactions = remember(transactions, searchQuery, selectedTypeFilter, selectedCategoryId) {
-    transactions.filter { item ->
-      val matchesSearch = searchQuery.isBlank() ||
-        item.title.contains(searchQuery, ignoreCase = true) ||
-        item.note.contains(searchQuery, ignoreCase = true)
+  val filteredTransactions = remember(
+    transactions,
+    categories,
+    searchQuery,
+    selectedTypeFilter,
+    selectedCategoryId,
+    selectedDateRange
+  ) {
+    filterTransactions(
+      transactions = transactions,
+      categories = categories,
+      searchQuery = searchQuery,
+      selectedTypeFilter = selectedTypeFilter,
+      selectedCategoryId = selectedCategoryId,
+      selectedDateRange = selectedDateRange
+    )
+  }
 
-      val matchesType = selectedTypeFilter == null || item.type == selectedTypeFilter
-      val matchesCat = selectedCategoryId == null || item.categoryId == selectedCategoryId
-
-      matchesSearch && matchesType && matchesCat
+  val dateRangeLabel = remember(selectedDateRange, strings.dateRange) {
+    if (selectedDateRange == null) {
+      strings.dateRange
+    } else {
+      val fmt = SimpleDateFormat("MMM d", Locale.getDefault())
+      val start = fmt.format(Date(selectedDateRange.first))
+      val end = fmt.format(Date(selectedDateRange.second))
+      if (start == end) start else "$start - $end"
     }
   }
 
@@ -112,16 +237,31 @@ fun TransactionsScreen(
         modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
       )
 
-      // Search Field
+      // Search Field (filters by title, category, or date)
       OutlinedTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChanged,
         placeholder = { Text(strings.searchTransactions) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
-          if (searchQuery.isNotEmpty()) {
-            IconButton(onClick = { onSearchQueryChanged("") }) {
-              Icon(Icons.Default.Clear, contentDescription = "Clear search")
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            if (searchQuery.isNotEmpty()) {
+              IconButton(
+                onClick = { onSearchQueryChanged("") },
+                modifier = Modifier.testTag("clear_search_button")
+              ) {
+                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+              }
+            }
+            IconButton(
+              onClick = { showDateRangeDialog = true },
+              modifier = Modifier.testTag("transaction_date_range_button")
+            ) {
+              Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = strings.dateRange,
+                tint = if (selectedDateRange != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+              )
             }
           }
         },
@@ -142,13 +282,42 @@ fun TransactionsScreen(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         FilterChip(
-          selected = selectedTypeFilter == null && selectedCategoryId == null,
+          selected = selectedTypeFilter == null && selectedCategoryId == null && selectedDateRange == null,
           onClick = {
             onTypeFilterChanged(null)
             onCategoryFilterChanged(null)
+            onDateRangeFilterChanged(null)
           },
           label = { Text("${strings.filterAll} (${transactions.size})") },
-          shape = RoundedCornerShape(12.dp)
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier.testTag("filter_all_chip")
+        )
+
+        FilterChip(
+          selected = selectedDateRange != null,
+          onClick = { showDateRangeDialog = true },
+          leadingIcon = {
+            Icon(
+              imageVector = Icons.Default.DateRange,
+              contentDescription = null,
+              modifier = Modifier.size(16.dp)
+            )
+          },
+          trailingIcon = if (selectedDateRange != null) {
+            {
+              Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Clear date range",
+                modifier = Modifier
+                  .size(16.dp)
+                  .clickable { onDateRangeFilterChanged(null) }
+                  .testTag("clear_date_range_icon")
+              )
+            }
+          } else null,
+          label = { Text(dateRangeLabel) },
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier.testTag("filter_date_range_chip")
         )
 
         FilterChip(
@@ -229,6 +398,67 @@ fun TransactionsScreen(
           }
         }
       }
+    }
+  }
+
+  // Date Range Picker Dialog
+  if (showDateRangeDialog) {
+    val dateRangePickerState = rememberDateRangePickerState(
+      initialSelectedStartDateMillis = selectedDateRange?.first?.let { localMillisToUtcDateMillis(it) },
+      initialSelectedEndDateMillis = selectedDateRange?.second?.let { localMillisToUtcDateMillis(it) }
+    )
+
+    DatePickerDialog(
+      onDismissRequest = { showDateRangeDialog = false },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            val startUtc = dateRangePickerState.selectedStartDateMillis
+            val endUtc = dateRangePickerState.selectedEndDateMillis ?: startUtc
+            if (startUtc != null && endUtc != null) {
+              onDateRangeFilterChanged(utcDateRangeToLocalBounds(startUtc, endUtc))
+            }
+            showDateRangeDialog = false
+          },
+          enabled = dateRangePickerState.selectedStartDateMillis != null,
+          modifier = Modifier.testTag("confirm_date_range_button")
+        ) {
+          Text("Apply")
+        }
+      },
+      dismissButton = {
+        Row {
+          if (selectedDateRange != null) {
+            TextButton(
+              onClick = {
+                onDateRangeFilterChanged(null)
+                showDateRangeDialog = false
+              },
+              modifier = Modifier.testTag("clear_date_range_dialog_button")
+            ) {
+              Text("Clear")
+            }
+          }
+          TextButton(onClick = { showDateRangeDialog = false }) {
+            Text(strings.cancel)
+          }
+        }
+      }
+    ) {
+      DateRangePicker(
+        state = dateRangePickerState,
+        title = {
+          Text(
+            text = strings.dateRange,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 24.dp, top = 16.dp)
+          )
+        },
+        showModeToggle = false,
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(440.dp)
+      )
     }
   }
 
