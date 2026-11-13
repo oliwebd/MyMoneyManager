@@ -144,4 +144,4 @@ See [AGENT.md](AGENT.md) for conventions, the architecture map and guidance for 
 
 ## License
 
-No license file is included in this repository yet.
+Licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
