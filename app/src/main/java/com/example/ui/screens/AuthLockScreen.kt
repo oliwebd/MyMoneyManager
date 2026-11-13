@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.i18n.LocalAppStrings
 
 @Composable
 fun AuthLockScreen(
@@ -52,6 +53,7 @@ fun AuthLockScreen(
   isBiometricAvailable: Boolean = true,
   modifier: Modifier = Modifier
 ) {
+  val strings = LocalAppStrings.current
   var enteredPin by remember { mutableStateOf("") }
   var isError by remember { mutableStateOf(false) }
   var errorMessage by remember { mutableStateOf("") }
@@ -72,7 +74,7 @@ fun AuthLockScreen(
         val success = onUnlockWithPin(newPin)
         if (!success) {
           isError = true
-          errorMessage = "Incorrect 6-digit PIN. Try again."
+          errorMessage = strings.incorrectPin
           enteredPin = ""
         }
       }
@@ -123,7 +125,7 @@ fun AuthLockScreen(
           color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-          text = "Enter your 6-digit security PIN to unlock",
+          text = strings.enterPinToUnlock,
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           textAlign = TextAlign.Center

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Policy
@@ -68,12 +69,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.SupportedCurrencies
+import com.example.data.model.SupportedLanguages
+import com.example.ui.components.CurrencyPickerDialog
+import com.example.ui.components.LanguagePickerDialog
+import com.example.ui.i18n.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackupSettingsScreen(
   currentCurrencyCode: String,
   onCurrencySelected: (String) -> Unit,
+  currentLanguageCode: String = "en",
+  onLanguageSelected: (String) -> Unit = {},
   securityEnabled: Boolean,
   onToggleSecurity: (Boolean, String) -> Boolean,
   biometricEnabled: Boolean,
@@ -91,12 +98,14 @@ fun BackupSettingsScreen(
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
+  val strings = LocalAppStrings.current
 
   var showExportDialog by remember { mutableStateOf(false) }
   var showImportDialog by remember { mutableStateOf(false) }
   var showChangePinDialog by remember { mutableStateOf(false) }
   var pinConfirm by remember { mutableStateOf<((String) -> Boolean)?>(null) }
   var showCurrencyDialog by remember { mutableStateOf(false) }
+  var showLanguageDialog by remember { mutableStateOf(false) }
   var showClearDataDialog by remember { mutableStateOf(false) }
   var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
   var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -117,7 +126,7 @@ fun BackupSettingsScreen(
   ) {
     item {
       Text(
-        text = "Vault",
+        text = strings.navVault,
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onBackground,
@@ -156,7 +165,7 @@ fun BackupSettingsScreen(
             Spacer(modifier = Modifier.width(10.dp))
             Column {
               Text(
-                text = "Encrypted Cloud Backup & Sync",
+                text = strings.encryptedBackup,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -184,7 +193,7 @@ fun BackupSettingsScreen(
             ) {
               Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
               Spacer(modifier = Modifier.width(6.dp))
-              Text("Export & Drive")
+              Text(strings.backup)
             }
 
             Button(
@@ -197,7 +206,7 @@ fun BackupSettingsScreen(
             ) {
               Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
               Spacer(modifier = Modifier.width(6.dp))
-              Text("Restore")
+              Text(strings.restore)
             }
           }
         }
@@ -214,7 +223,7 @@ fun BackupSettingsScreen(
       ) {
         Column(modifier = Modifier.padding(18.dp)) {
           Text(
-            text = "Preferences",
+            text = strings.preferences,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -224,7 +233,7 @@ fun BackupSettingsScreen(
           // Base Currency Selector Row
           SettingsActionRow(
             icon = Icons.Default.CurrencyExchange,
-            title = "Base Currency",
+            title = strings.baseCurrency,
             subtitle = SupportedCurrencies.find { it.code == currentCurrencyCode }?.let { "${it.code} (${it.symbol} - ${it.name})" } ?: currentCurrencyCode,
             onClick = { showCurrencyDialog = true },
             testTag = "currency_selector_row"
@@ -232,11 +241,22 @@ fun BackupSettingsScreen(
 
           Spacer(modifier = Modifier.height(8.dp))
 
+          // App Language Selector Row
+          SettingsActionRow(
+            icon = Icons.Default.Language,
+            title = strings.appLanguage,
+            subtitle = SupportedLanguages.find { it.code == currentLanguageCode }?.let { "${it.nativeName} (${it.englishName})" } ?: currentLanguageCode,
+            onClick = { showLanguageDialog = true },
+            testTag = "language_selector_row"
+          )
+
+          Spacer(modifier = Modifier.height(8.dp))
+
           // Notification Toggle Row
           SettingsSwitchRow(
             icon = Icons.Default.Notifications,
-            title = "Notifications & Alerts",
-            subtitle = "Threshold warnings (80% & 100%) and recurring bill reminders",
+            title = strings.notificationsAlerts,
+            subtitle = strings.notificationsSubtitle,
             checked = notificationsEnabled,
             onCheckedChange = onToggleNotifications
           )
@@ -254,7 +274,7 @@ fun BackupSettingsScreen(
       ) {
         Column(modifier = Modifier.padding(18.dp)) {
           Text(
-            text = "Authentication & Lock",
+            text = strings.authAndLock,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -264,8 +284,8 @@ fun BackupSettingsScreen(
           // Security Lock Toggle
           SettingsSwitchRow(
             icon = Icons.Default.Lock,
-            title = "Passcode Protection",
-            subtitle = "Lock app when closed or minimized",
+            title = strings.passcodeProtection,
+            subtitle = strings.passcodeSubtitle,
             checked = securityEnabled,
             onCheckedChange = { on ->
               if (on || !securityEnabled) onToggleSecurity(on, "") else pinConfirm = { onToggleSecurity(false, it) }
@@ -277,8 +297,8 @@ fun BackupSettingsScreen(
           // Biometrics Toggle
           SettingsSwitchRow(
             icon = Icons.Default.Fingerprint,
-            title = "Biometric Authentication",
-            subtitle = "Unlock via Fingerprint or Face recognition",
+            title = strings.biometricAuth,
+            subtitle = strings.biometricSubtitle,
             checked = biometricEnabled,
             onCheckedChange = onToggleBiometric
           )
@@ -288,8 +308,8 @@ fun BackupSettingsScreen(
           // Change 6-Digit PIN Action
           SettingsActionRow(
             icon = Icons.Default.Key,
-            title = "Change 6-Digit PIN",
-            subtitle = "Update your master security PIN fallback",
+            title = strings.changePin,
+            subtitle = strings.changePinSubtitle,
             onClick = { showChangePinDialog = true },
             testTag = "change_pin_row"
           )
@@ -593,101 +613,19 @@ fun BackupSettingsScreen(
 
   // Currency Selection Dialog
   if (showCurrencyDialog) {
-    var currencySearchQuery by remember { mutableStateOf("") }
-    val filteredCurrencies = remember(currencySearchQuery) {
-      if (currencySearchQuery.isBlank()) {
-        SupportedCurrencies
-      } else {
-        val q = currencySearchQuery.trim().lowercase()
-        SupportedCurrencies.filter {
-          it.code.lowercase().contains(q) ||
-            it.name.lowercase().contains(q) ||
-            it.symbol.lowercase().contains(q)
-        }
-      }
-    }
+    CurrencyPickerDialog(
+      currentCurrencyCode = currentCurrencyCode,
+      onSelect = onCurrencySelected,
+      onDismiss = { showCurrencyDialog = false }
+    )
+  }
 
-    AlertDialog(
-      onDismissRequest = { showCurrencyDialog = false },
-      title = { Text("Select Base Currency (${SupportedCurrencies.size} Available)") },
-      text = {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          OutlinedTextField(
-            value = currencySearchQuery,
-            onValueChange = { currencySearchQuery = it },
-            placeholder = { Text("Search code, symbol, or country...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-              if (currencySearchQuery.isNotEmpty()) {
-                IconButton(onClick = { currencySearchQuery = "" }) {
-                  Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                }
-              }
-            },
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("currency_search_input")
-          )
-
-          LazyColumn(
-            modifier = Modifier.heightIn(max = 380.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-          ) {
-            items(filteredCurrencies.size) { index ->
-              val curr = filteredCurrencies[index]
-              val isSelected = curr.code == currentCurrencyCode
-              Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .clickable {
-                    onCurrencySelected(curr.code)
-                    showCurrencyDialog = false
-                  }
-                  .testTag("currency_item_${curr.code}")
-              ) {
-                Row(
-                  modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                  Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                      text = "${curr.code} • ${curr.name}",
-                      style = MaterialTheme.typography.bodyMedium,
-                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                      color = MaterialTheme.colorScheme.onSurface
-                    )
-                  }
-                  Text(
-                    text = curr.symbol,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                  )
-                }
-              }
-            }
-
-            if (filteredCurrencies.isEmpty()) {
-              item {
-                Text(
-                  text = "No matching currencies found.",
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  modifier = Modifier.padding(vertical = 16.dp)
-                )
-              }
-            }
-          }
-        }
-      },
-      confirmButton = {
-        TextButton(onClick = { showCurrencyDialog = false }) {
-          Text("Close")
-        }
-      }
+  // Language Selection Dialog
+  if (showLanguageDialog) {
+    LanguagePickerDialog(
+      currentLanguageCode = currentLanguageCode,
+      onSelect = onLanguageSelected,
+      onDismiss = { showLanguageDialog = false }
     )
   }
 

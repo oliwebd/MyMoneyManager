@@ -14,6 +14,7 @@ import com.example.data.model.MonthlyBudgetEntity
 import com.example.data.model.RecurringAlertEntity
 import com.example.data.model.RecurringInterval
 import com.example.data.model.SupportedCurrencies
+import com.example.data.model.SupportedLanguages
 import com.example.data.model.TransactionEntity
 import com.example.data.model.TransactionType
 import com.example.data.repository.FinanceRepository
@@ -72,6 +73,14 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
   // Base Currency
   private val _baseCurrency = MutableStateFlow(repository.securityPrefs.getBaseCurrency())
   val baseCurrency: StateFlow<String> = _baseCurrency.asStateFlow()
+
+  // App Language
+  private val _appLanguage = MutableStateFlow(
+    repository.securityPrefs.getAppLanguage().also { code ->
+      Locale.setDefault(Locale.forLanguageTag(code))
+    }
+  )
+  val appLanguage: StateFlow<String> = _appLanguage.asStateFlow()
 
   val currencySymbol: String
     get() = SupportedCurrencies.find { it.code == _baseCurrency.value }?.symbol ?: "$"
@@ -163,7 +172,18 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }
   }
 
-  fun completeInitialSecuritySetup(pin: String, enableBiometric: Boolean) {
+  fun completeInitialSecuritySetup(
+    pin: String,
+    enableBiometric: Boolean,
+    currencyCode: String = _baseCurrency.value,
+    languageCode: String = _appLanguage.value
+  ) {
+    repository.securityPrefs.setBaseCurrency(currencyCode)
+    repository.securityPrefs.setAppLanguage(languageCode)
+    Locale.setDefault(Locale.forLanguageTag(languageCode))
+    _baseCurrency.value = currencyCode
+    _appLanguage.value = languageCode
+
     repository.securityPrefs.setPin(pin)
     repository.securityPrefs.setBiometricEnabled(enableBiometric)
     repository.securityPrefs.setSecurityEnabled(true)
@@ -175,7 +195,16 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     showMessage("Security setup complete. Welcome to M3Note!")
   }
 
-  fun skipInitialSecuritySetup() {
+  fun skipInitialSecuritySetup(
+    currencyCode: String = _baseCurrency.value,
+    languageCode: String = _appLanguage.value
+  ) {
+    repository.securityPrefs.setBaseCurrency(currencyCode)
+    repository.securityPrefs.setAppLanguage(languageCode)
+    Locale.setDefault(Locale.forLanguageTag(languageCode))
+    _baseCurrency.value = currencyCode
+    _appLanguage.value = languageCode
+
     repository.securityPrefs.setSecurityEnabled(false)
     repository.securityPrefs.setSetupDone(true)
     _isSetupDone.value = true
@@ -223,6 +252,14 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     repository.securityPrefs.setBaseCurrency(code)
     _baseCurrency.value = code
     showMessage("Base currency set to $code")
+  }
+
+  fun setAppLanguage(code: String) {
+    repository.securityPrefs.setAppLanguage(code)
+    Locale.setDefault(Locale.forLanguageTag(code))
+    _appLanguage.value = code
+    val name = SupportedLanguages.find { it.code == code }?.nativeName ?: code
+    showMessage("Language set to $name")
   }
 
   // Transactions CRUD

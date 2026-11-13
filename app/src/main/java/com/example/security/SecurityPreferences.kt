@@ -24,6 +24,7 @@ class SecurityPreferences(
     private const val KEY_FAILED_ATTEMPTS = "pin_failed_attempts"
     private const val KEY_LOCKOUT_UNTIL = "pin_lockout_until_ms"
     private const val KEY_BASE_CURRENCY = "base_currency"
+    private const val KEY_APP_LANGUAGE = "app_language"
     private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
 
     private const val ALGORITHM_PBKDF2 = "PBKDF2WithHmacSHA256"
@@ -60,6 +61,12 @@ class SecurityPreferences(
 
   fun setBaseCurrency(currencyCode: String) {
     prefs.edit().putString(KEY_BASE_CURRENCY, currencyCode).apply()
+  }
+
+  fun getAppLanguage(): String = prefs.getString(KEY_APP_LANGUAGE, null) ?: "en"
+
+  fun setAppLanguage(languageCode: String) {
+    prefs.edit().putString(KEY_APP_LANGUAGE, languageCode).apply()
   }
 
   fun hasPin(): Boolean {

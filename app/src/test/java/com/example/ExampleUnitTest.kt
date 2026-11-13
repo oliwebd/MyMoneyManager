@@ -53,4 +53,18 @@ class ExampleUnitTest {
 
     assertEquals(samplePayload, recoveredString)
   }
+
+  @Test
+  fun testAllSupportedLanguagesHaveTranslations() {
+    assertTrue(com.example.data.model.SupportedLanguages.size >= 20)
+    assertTrue(com.example.data.model.SupportedCurrencies.size >= 40)
+    com.example.data.model.SupportedLanguages.forEach { lang ->
+      val strings = com.example.ui.i18n.appStringsFor(lang.code)
+      assertTrue(strings.welcomeTitle.isNotBlank())
+      assertTrue(strings.navDashboard.isNotBlank())
+      assertTrue(strings.navTransactions.isNotBlank())
+      assertTrue(strings.currencyLabel.isNotBlank())
+      assertTrue(strings.languageLabel.isNotBlank())
+    }
+  }
 }

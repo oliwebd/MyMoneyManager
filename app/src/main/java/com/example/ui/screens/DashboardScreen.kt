@@ -23,7 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PieChart
@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.AccountEntity
@@ -61,6 +62,9 @@ import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.CategorySlice
 import com.example.ui.components.MonthlyComparisonBarChart
 import com.example.ui.components.MonthlyTrendItem
+import com.example.ui.i18n.LocalAppStrings
+import com.example.ui.theme.expenseColors
+import com.example.ui.theme.incomeColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -86,6 +90,7 @@ fun DashboardScreen(
   onLockApp: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val strings = LocalAppStrings.current
   // Format Month-Year label (e.g., "Nov 2026")
   val displayMonthLabel = try {
     val date = SimpleDateFormat("yyyy-MM", Locale.getDefault()).parse(selectedMonthYear)
@@ -235,7 +240,7 @@ fun DashboardScreen(
               verticalAlignment = Alignment.CenterVertically
             ) {
               Text(
-                text = "Net Cash Flow",
+                text = strings.netCashFlow,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
@@ -304,7 +309,7 @@ fun DashboardScreen(
                   Spacer(modifier = Modifier.width(8.dp))
                   Column {
                     Text(
-                      text = "Income",
+                      text = strings.income,
                       style = MaterialTheme.typography.labelSmall,
                       color = incomePillText
                     )
@@ -344,7 +349,7 @@ fun DashboardScreen(
                   Spacer(modifier = Modifier.width(8.dp))
                   Column {
                     Text(
-                      text = "Expense",
+                      text = strings.expense,
                       style = MaterialTheme.typography.labelSmall,
                       color = expensePillText
                     )
@@ -381,7 +386,7 @@ fun DashboardScreen(
         ) {
           QuickActionItem(
             icon = Icons.Default.Add,
-            label = "Add Entry",
+            label = strings.addEntry,
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             onClick = onOpenAddTransaction,
@@ -389,7 +394,7 @@ fun DashboardScreen(
           )
           QuickActionItem(
             icon = Icons.Default.Savings,
-            label = "Budgets",
+            label = strings.navBudgets,
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             onClick = onNavigateToBudgets,
@@ -397,7 +402,7 @@ fun DashboardScreen(
           )
           QuickActionItem(
             icon = Icons.Default.Shield,
-            label = "Vault",
+            label = strings.navVault,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             onClick = onNavigateToBackup,
@@ -478,13 +483,13 @@ fun DashboardScreen(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Text(
-          text = "Recent Transactions",
+          text = strings.recentTransactions,
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onBackground
         )
         TextButton(onClick = onNavigateToTransactions, modifier = Modifier.testTag("view_all_transactions_button")) {
-          Text("View All (${transactions.size})")
+          Text("${strings.viewAll} (${transactions.size})")
         }
       }
     }
@@ -505,7 +510,7 @@ fun DashboardScreen(
             contentAlignment = Alignment.Center
           ) {
             Text(
-              text = "No transactions logged yet. Tap 'Add Entry' to start!",
+              text = strings.noTransactionsYet,
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -513,12 +518,16 @@ fun DashboardScreen(
         }
       }
     } else {
-      items(recentFive) { item ->
-        TransactionRowItem(
-          transaction = item,
-          categories = categories,
-          currencySymbol = currencySymbol
-        )
+      item {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          recentFive.forEach { item ->
+            TransactionRowItem(
+              transaction = item,
+              categories = categories,
+              currencySymbol = currencySymbol
+            )
+          }
+        }
       }
     }
 
@@ -533,6 +542,7 @@ fun TransactionRowItem(
   transaction: TransactionEntity,
   categories: List<CategoryEntity>,
   currencySymbol: String,
+  showTime: Boolean = false,
   onDelete: (() -> Unit)? = null
 ) {
   val cat = categories.find { it.id == transaction.categoryId }
@@ -542,93 +552,84 @@ fun TransactionRowItem(
     MaterialTheme.colorScheme.primary
   }
 
-  val dateStr = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(transaction.timestamp))
+  val datePattern = if (showTime) "MMM dd • hh:mm a" else "MMM dd, yyyy"
+  val dateStr = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date(transaction.timestamp))
+  val metaStr = if (showTime && transaction.note.isNotBlank()) "$dateStr • ${transaction.note}" else dateStr
   val isIncome = transaction.type == TransactionType.INCOME
+  val amountColor = if (isIncome) incomeColors().main else expenseColors().main
 
   Card(
-    shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    shape = RoundedCornerShape(14.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth()
   ) {
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 14.dp, vertical = 12.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.SpaceBetween
+        .padding(
+          start = 10.dp,
+          end = if (onDelete != null) 4.dp else 12.dp,
+          top = if (onDelete != null) 5.dp else 8.dp,
+          bottom = if (onDelete != null) 5.dp else 8.dp
+        ),
+      verticalAlignment = Alignment.CenterVertically
     ) {
-      Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-        Box(
-          modifier = Modifier
-            .size(40.dp)
-            .background(catColor.copy(alpha = 0.22f), CircleShape),
-          contentAlignment = Alignment.Center
+      Box(
+        modifier = Modifier
+          .size(34.dp)
+          .background(catColor.copy(alpha = 0.18f), CircleShape),
+        contentAlignment = Alignment.Center
+      ) {
+        Icon(
+          imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
+          contentDescription = null,
+          tint = catColor,
+          modifier = Modifier.size(18.dp)
+        )
+      }
+
+      Spacer(modifier = Modifier.width(10.dp))
+
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = transaction.title,
+          style = MaterialTheme.typography.bodyMedium,
+          fontWeight = FontWeight.SemiBold,
+          color = MaterialTheme.colorScheme.onSurface,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-          Icon(
-            imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
-            contentDescription = null,
-            tint = catColor,
-            modifier = Modifier.size(20.dp)
-          )
-        }
-
-        Spacer(modifier = Modifier.width(14.dp))
-
-        Column {
-          Text(
-            text = transaction.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 15.sp,
-            maxLines = 1
-          )
-
-          Spacer(modifier = Modifier.height(4.dp))
-
           Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = catColor.copy(alpha = 0.22f)
+            shape = RoundedCornerShape(6.dp),
+            color = catColor.copy(alpha = 0.16f)
           ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Icon(
-                imageVector = CategoryIconHelper.getIcon(cat?.iconName ?: "category"),
-                contentDescription = null,
-                tint = catColor,
-                modifier = Modifier.size(13.dp)
-              )
-              Spacer(modifier = Modifier.width(4.dp))
-              Text(
-                text = cat?.name ?: "General",
-                style = MaterialTheme.typography.labelSmall,
-                color = catColor,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(4.dp))
-
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-              imageVector = Icons.Default.CalendarToday,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.onSurfaceVariant,
-              modifier = Modifier.size(12.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
             Text(
-              text = dateStr,
+              text = cat?.name ?: "General",
               style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-              fontSize = 11.5.sp
+              color = catColor,
+              fontWeight = FontWeight.SemiBold,
+              fontSize = 10.sp,
+              maxLines = 1,
+              modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
             )
           }
+
+          Text(
+            text = metaStr,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
         }
       }
 
@@ -636,11 +637,32 @@ fun TransactionRowItem(
 
       Text(
         text = "${if (isIncome) "+" else "-"}$currencySymbol${String.format("%.2f", transaction.amount)}",
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Bold,
-        color = if (isIncome) Color(0xFF0F9D58) else Color(0xFFEA4335),
-        fontSize = 15.sp
+        color = amountColor,
+        maxLines = 1
       )
+
+      if (onDelete != null) {
+        IconButton(
+          onClick = onDelete,
+          modifier = Modifier.testTag("delete_transaction_${transaction.id}")
+        ) {
+          Box(
+            modifier = Modifier
+              .size(30.dp)
+              .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Delete,
+              contentDescription = "Delete",
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.size(16.dp)
+            )
+          }
+        }
+      }
     }
   }
 }

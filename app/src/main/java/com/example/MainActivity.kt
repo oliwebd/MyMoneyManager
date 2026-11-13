@@ -49,6 +49,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,12 +58,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.model.SupportedLanguages
+import com.example.ui.i18n.LocalAppStrings
+import com.example.ui.i18n.appStringsFor
 import com.example.ui.screens.AddTransactionSheet
 import com.example.ui.screens.AuthLockScreen
 import com.example.ui.screens.BackupSettingsScreen
@@ -226,7 +232,12 @@ fun MyMoneyManagerApp(
   val recentTitles by viewModel.recentTitles.collectAsStateWithLifecycle()
   val selectedMonthYear by viewModel.selectedMonthYear.collectAsStateWithLifecycle()
   val baseCurrency by viewModel.baseCurrency.collectAsStateWithLifecycle()
+  val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
   val monthlyBudgets by viewModel.monthlyBudgets.collectAsStateWithLifecycle()
+  val strings = remember(appLanguage) { appStringsFor(appLanguage) }
+  val layoutDirection = remember(appLanguage) {
+    if (SupportedLanguages.find { it.code == appLanguage }?.isRtl == true) LayoutDirection.Rtl else LayoutDirection.Ltr
+  }
 
   val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
   val filterType by viewModel.filterType.collectAsStateWithLifecycle()
@@ -272,18 +283,25 @@ fun MyMoneyManagerApp(
     currentScreen = AppScreen.DASHBOARD
   }
 
-  // Initial Security Setup Screen (PIN / Fingerprint setup on first run)
+  CompositionLocalProvider(
+    LocalAppStrings provides strings,
+    LocalLayoutDirection provides layoutDirection
+  ) {
+  // Initial Security Setup Screen (PIN / Fingerprint / Currency / Language setup on first run)
   if (!isSetupDone) {
     InitialSecuritySetupScreen(
-      onSetupComplete = { pin, enableBiometric ->
-        viewModel.completeInitialSecuritySetup(pin, enableBiometric)
+      initialCurrencyCode = baseCurrency,
+      initialLanguageCode = appLanguage,
+      onLanguageSelected = { viewModel.setAppLanguage(it) },
+      onSetupComplete = { pin, enableBiometric, currencyCode, languageCode ->
+        viewModel.completeInitialSecuritySetup(pin, enableBiometric, currencyCode, languageCode)
       },
-      onSkipSetup = {
-        viewModel.skipInitialSecuritySetup()
+      onSkipSetup = { currencyCode, languageCode ->
+        viewModel.skipInitialSecuritySetup(currencyCode, languageCode)
       },
       isBiometricAvailable = true
     )
-    return
+    return@CompositionLocalProvider
   }
 
   // Locked Screen
@@ -302,7 +320,7 @@ fun MyMoneyManagerApp(
       },
       isBiometricAvailable = biometricEnabled
     )
-    return
+    return@CompositionLocalProvider
   }
 
   // Analytical data
@@ -326,29 +344,29 @@ fun MyMoneyManagerApp(
         NavigationBarItem(
           selected = currentScreen == AppScreen.DASHBOARD,
           onClick = { currentScreen = AppScreen.DASHBOARD },
-          icon = { Icon(Icons.Default.PieChart, contentDescription = "Dashboard") },
-          label = { Text("Dashboard") },
+          icon = { Icon(Icons.Default.PieChart, contentDescription = strings.navDashboard) },
+          label = { Text(strings.navDashboard) },
           modifier = Modifier.testTag("nav_tab_dashboard")
         )
         NavigationBarItem(
           selected = currentScreen == AppScreen.TRANSACTIONS,
           onClick = { currentScreen = AppScreen.TRANSACTIONS },
-          icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Transactions") },
-          label = { Text("Transactions") },
+          icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = strings.navTransactions) },
+          label = { Text(strings.navTransactions) },
           modifier = Modifier.testTag("nav_tab_transactions")
         )
         NavigationBarItem(
           selected = currentScreen == AppScreen.BUDGETS,
           onClick = { currentScreen = AppScreen.BUDGETS },
-          icon = { Icon(Icons.Default.Savings, contentDescription = "Budgets") },
-          label = { Text("Budgets") },
+          icon = { Icon(Icons.Default.Savings, contentDescription = strings.navBudgets) },
+          label = { Text(strings.navBudgets) },
           modifier = Modifier.testTag("nav_tab_budgets")
         )
         NavigationBarItem(
           selected = currentScreen == AppScreen.SETTINGS,
           onClick = { currentScreen = AppScreen.SETTINGS },
-          icon = { Icon(Icons.Default.Shield, contentDescription = "Sync & Security") },
-          label = { Text("Vault") },
+          icon = { Icon(Icons.Default.Shield, contentDescription = strings.navVault) },
+          label = { Text(strings.navVault) },
           modifier = Modifier.testTag("nav_tab_settings")
         )
       }
@@ -442,6 +460,8 @@ fun MyMoneyManagerApp(
           BackupSettingsScreen(
             currentCurrencyCode = baseCurrency,
             onCurrencySelected = { viewModel.setBaseCurrency(it) },
+            currentLanguageCode = appLanguage,
+            onLanguageSelected = { viewModel.setAppLanguage(it) },
             securityEnabled = securityEnabled,
             onToggleSecurity = { on, pin -> viewModel.toggleSecurity(on, pin) },
             biometricEnabled = biometricEnabled,
@@ -502,5 +522,6 @@ fun MyMoneyManagerApp(
         )
       }
     }
+  }
   }
 }

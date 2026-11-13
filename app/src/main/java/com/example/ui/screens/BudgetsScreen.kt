@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.CategoryEntity
 import com.example.data.model.MonthlyBudgetEntity
 import com.example.ui.components.CategoryIconHelper
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.viewmodel.BudgetProgressItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,6 +80,7 @@ fun BudgetsScreen(
   onTriggerTestNotification: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val strings = LocalAppStrings.current
   var showAddDialog by remember { mutableStateOf(false) }
   var budgetToEdit by remember { mutableStateOf<MonthlyBudgetEntity?>(null) }
   var budgetToDelete by remember { mutableStateOf<MonthlyBudgetEntity?>(null) }
@@ -121,7 +123,7 @@ fun BudgetsScreen(
       ) {
         Column {
           Text(
-            text = "Monthly Budgets",
+            text = strings.monthlyBudgets,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground

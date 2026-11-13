@@ -101,6 +101,18 @@ class SecurityPreferencesTest {
     assertTrue(securityPrefs.verifyPin(pin))
   }
 
+  @Test
+  fun testBaseCurrencyAndLanguagePersistence() {
+    assertEquals("USD", securityPrefs.getBaseCurrency())
+    assertEquals("en", securityPrefs.getAppLanguage())
+
+    securityPrefs.setBaseCurrency("SAR")
+    securityPrefs.setAppLanguage("ar")
+
+    assertEquals("SAR", securityPrefs.getBaseCurrency())
+    assertEquals("ar", securityPrefs.getAppLanguage())
+  }
+
   private class FakeSharedPreferences : SharedPreferences {
     private val map = mutableMapOf<String, Any?>()
 

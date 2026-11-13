@@ -97,3 +97,37 @@ val SupportedCurrencies = listOf(
   CurrencyItem("COP", "COL$", "Colombian Peso"),
   CurrencyItem("PEN", "S/.", "Peruvian Sol")
 )
+
+data class LanguageItem(
+  val code: String,
+  val nativeName: String,
+  val englishName: String,
+  val isRtl: Boolean = false
+)
+
+val SupportedLanguages = listOf(
+  LanguageItem("en", "English", "English"),
+  LanguageItem("es", "Español", "Spanish"),
+  LanguageItem("fr", "Français", "French"),
+  LanguageItem("de", "Deutsch", "German"),
+  LanguageItem("it", "Italiano", "Italian"),
+  LanguageItem("pt", "Português", "Portuguese"),
+  LanguageItem("nl", "Nederlands", "Dutch"),
+  LanguageItem("pl", "Polski", "Polish"),
+  LanguageItem("ru", "Русский", "Russian"),
+  LanguageItem("uk", "Українська", "Ukrainian"),
+  LanguageItem("tr", "Türkçe", "Turkish"),
+  LanguageItem("ar", "العربية", "Arabic", isRtl = true),
+  LanguageItem("fa", "فارسی", "Persian", isRtl = true),
+  LanguageItem("ur", "اردو", "Urdu", isRtl = true),
+  LanguageItem("hi", "हिन्दी", "Hindi"),
+  LanguageItem("bn", "বাংলা", "Bengali"),
+  LanguageItem("zh", "简体中文", "Chinese (Simplified)"),
+  LanguageItem("ja", "日本語", "Japanese"),
+  LanguageItem("ko", "한국어", "Korean"),
+  LanguageItem("id", "Bahasa Indonesia", "Indonesian"),
+  LanguageItem("ms", "Bahasa Melayu", "Malay"),
+  LanguageItem("vi", "Tiếng Việt", "Vietnamese"),
+  LanguageItem("th", "ไทย", "Thai")
+)
+
