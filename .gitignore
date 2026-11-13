@@ -18,3 +18,4 @@ debug.keystore
 debug.keystore.base64
 .aistudio/
 *.patch
+/public
