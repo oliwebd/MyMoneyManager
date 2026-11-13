@@ -20,12 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -231,7 +231,7 @@ fun BudgetsScreen(
         ) {
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-              imageVector = Icons.Default.Savings,
+              imageVector = Icons.Default.AccountBalanceWallet,
               contentDescription = null,
               tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
               modifier = Modifier.size(56.dp)
@@ -292,7 +292,7 @@ fun BudgetsScreen(
                       contentAlignment = Alignment.Center
                     ) {
                       Icon(
-                        imageVector = CategoryIconHelper.getIcon(item.category?.iconName ?: "savings"),
+                        imageVector = CategoryIconHelper.getIcon(item.category?.iconName ?: "account_balance_wallet"),
                         contentDescription = null,
                         tint = catColor,
                         modifier = Modifier.size(20.dp)

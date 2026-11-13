@@ -35,9 +35,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -363,7 +363,7 @@ fun MyMoneyManagerApp(
         NavigationBarItem(
           selected = currentScreen == AppScreen.BUDGETS,
           onClick = { currentScreen = AppScreen.BUDGETS },
-          icon = { Icon(Icons.Default.Savings, contentDescription = strings.navBudgets) },
+          icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = strings.navBudgets) },
           label = { Text(strings.navBudgets) },
           modifier = Modifier.testTag("nav_tab_budgets")
         )

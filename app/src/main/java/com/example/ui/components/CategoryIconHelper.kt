@@ -36,7 +36,7 @@ object CategoryIconHelper {
       "school" -> Icons.Default.School
       "flight" -> Icons.Default.Flight
       "account_balance" -> Icons.Default.AccountBalance
-      "account_balance_wallet" -> Icons.Default.AccountBalanceWallet
+      "account_balance_wallet", "savings" -> Icons.Default.AccountBalanceWallet
       else -> Icons.Default.Category
     }
   }
