@@ -120,4 +120,27 @@ class TransactionsFilterTest {
     assertEquals(listOf(2L, 3L), result.map { it.id })
     assertEquals(utcStart, localMillisToUtcDateMillis(bounds.first))
   }
+
+  @Test
+  fun testUtcDateKeepsLocalTimeOfDay() {
+    val zone = TimeZone.getTimeZone("America/Los_Angeles")
+    val utcDate = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+      clear()
+      set(2026, Calendar.NOVEMBER, 12)
+    }.timeInMillis
+    val original = Calendar.getInstance(zone).apply {
+      clear()
+      set(2026, Calendar.NOVEMBER, 10, 21, 30, 15)
+    }.timeInMillis
+
+    val result = Calendar.getInstance(zone).apply {
+      timeInMillis = utcDateMillisToLocalMillis(utcDate, original, zone)
+    }
+    assertEquals(2026, result.get(Calendar.YEAR))
+    assertEquals(Calendar.NOVEMBER, result.get(Calendar.MONTH))
+    assertEquals(12, result.get(Calendar.DAY_OF_MONTH))
+    assertEquals(21, result.get(Calendar.HOUR_OF_DAY))
+    assertEquals(30, result.get(Calendar.MINUTE))
+    assertEquals(15, result.get(Calendar.SECOND))
+  }
 }

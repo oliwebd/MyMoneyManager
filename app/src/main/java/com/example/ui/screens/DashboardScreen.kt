@@ -543,7 +543,8 @@ fun TransactionRowItem(
   categories: List<CategoryEntity>,
   currencySymbol: String,
   showTime: Boolean = false,
-  onDelete: (() -> Unit)? = null
+  onDelete: (() -> Unit)? = null,
+  onClick: (() -> Unit)? = null
 ) {
   val cat = categories.find { it.id == transaction.categoryId }
   val catColor = try {
@@ -562,7 +563,16 @@ fun TransactionRowItem(
     shape = RoundedCornerShape(14.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    modifier = Modifier.fillMaxWidth()
+    modifier = Modifier
+      .fillMaxWidth()
+      .then(
+        if (onClick != null) {
+          Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .testTag("edit_transaction_${transaction.id}")
+        } else Modifier
+      )
   ) {
     Row(
       modifier = Modifier

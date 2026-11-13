@@ -21,7 +21,7 @@ interface TransactionDao {
   @Query("SELECT * FROM transactions WHERE timestamp BETWEEN :startTimestamp AND :endTimestamp ORDER BY timestamp DESC")
   fun getTransactionsInRange(startTimestamp: Long, endTimestamp: Long): Flow<List<TransactionEntity>>
 
-  @Query("SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 200")
+  @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
   suspend fun getAllTransactionsSnapshot(): List<TransactionEntity>
 
   @Query("SELECT DISTINCT title FROM transactions ORDER BY timestamp DESC LIMIT 30")

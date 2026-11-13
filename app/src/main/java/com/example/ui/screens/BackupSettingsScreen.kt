@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
@@ -68,8 +70,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.AccountEntity
+import com.example.data.model.CategoryEntity
 import com.example.data.model.SupportedCurrencies
 import com.example.data.model.SupportedLanguages
+import com.example.ui.components.AccountsDialog
+import com.example.ui.components.CategoriesDialog
 import com.example.ui.components.CurrencyPickerDialog
 import com.example.ui.components.LanguagePickerDialog
 import com.example.ui.i18n.LocalAppStrings
@@ -81,6 +87,10 @@ fun BackupSettingsScreen(
   onCurrencySelected: (String) -> Unit,
   currentLanguageCode: String = "en",
   onLanguageSelected: (String) -> Unit = {},
+  categories: List<CategoryEntity> = emptyList(),
+  onSaveCategory: (CategoryEntity) -> Unit = {},
+  accounts: List<AccountEntity> = emptyList(),
+  onSaveAccount: (AccountEntity) -> Unit = {},
   securityEnabled: Boolean,
   onToggleSecurity: (Boolean, String) -> Boolean,
   biometricEnabled: Boolean,
@@ -106,6 +116,8 @@ fun BackupSettingsScreen(
   var pinConfirm by remember { mutableStateOf<((String) -> Boolean)?>(null) }
   var showCurrencyDialog by remember { mutableStateOf(false) }
   var showLanguageDialog by remember { mutableStateOf(false) }
+  var showCategoriesDialog by remember { mutableStateOf(false) }
+  var showAccountsDialog by remember { mutableStateOf(false) }
   var showClearDataDialog by remember { mutableStateOf(false) }
   var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
   var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -248,6 +260,26 @@ fun BackupSettingsScreen(
             subtitle = SupportedLanguages.find { it.code == currentLanguageCode }?.let { "${it.nativeName} (${it.englishName})" } ?: currentLanguageCode,
             onClick = { showLanguageDialog = true },
             testTag = "language_selector_row"
+          )
+
+          Spacer(modifier = Modifier.height(8.dp))
+
+          SettingsActionRow(
+            icon = Icons.Default.Category,
+            title = strings.categoriesTitle,
+            subtitle = strings.categoriesSubtitle,
+            onClick = { showCategoriesDialog = true },
+            testTag = "categories_row"
+          )
+
+          Spacer(modifier = Modifier.height(8.dp))
+
+          SettingsActionRow(
+            icon = Icons.Default.AccountBalance,
+            title = strings.accountsTitle,
+            subtitle = strings.accountsSubtitle,
+            onClick = { showAccountsDialog = true },
+            testTag = "accounts_row"
           )
 
           Spacer(modifier = Modifier.height(8.dp))
@@ -621,6 +653,22 @@ fun BackupSettingsScreen(
   }
 
   // Language Selection Dialog
+  if (showCategoriesDialog) {
+    CategoriesDialog(
+      categories = categories,
+      onSave = onSaveCategory,
+      onDismiss = { showCategoriesDialog = false }
+    )
+  }
+
+  if (showAccountsDialog) {
+    AccountsDialog(
+      accounts = accounts,
+      onSave = onSaveAccount,
+      onDismiss = { showAccountsDialog = false }
+    )
+  }
+
   if (showLanguageDialog) {
     LanguagePickerDialog(
       currentLanguageCode = currentLanguageCode,

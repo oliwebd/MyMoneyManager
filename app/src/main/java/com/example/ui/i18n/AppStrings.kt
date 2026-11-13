@@ -77,7 +77,22 @@ data class AppStrings(
   val restore: String = "Restore",
   val dataManagement: String = "Data Management",
   val dataManagementSubtitle: String = "Clean all pre-data or wipe database records",
-  val clearAllData: String = "Clear All Data"
+  val clearAllData: String = "Clear All Data",
+
+  // Categories & Accounts
+  val ok: String = "OK",
+  val save: String = "Save",
+  val add: String = "Add",
+  val close: String = "Close",
+  val nameLabel: String = "Name",
+  val categoriesTitle: String = "Categories",
+  val categoriesSubtitle: String = "Add or edit your categories",
+  val accountsTitle: String = "Accounts",
+  val accountsSubtitle: String = "Add or edit your accounts",
+  val newCategory: String = "New Category",
+  val editCategory: String = "Edit Category",
+  val newAccount: String = "New Account",
+  val editAccount: String = "Edit Account"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { AppStrings() }

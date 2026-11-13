@@ -67,6 +67,14 @@ class FinanceRepository(
     accountDao.updateBalance(transaction.accountId, revertDelta)
   }
 
+  suspend fun updateTransaction(old: TransactionEntity, updated: TransactionEntity) = withContext(Dispatchers.IO) {
+    transactionDao.updateTransaction(updated)
+    val revertDelta = if (old.type == TransactionType.INCOME) -old.amount else old.amount
+    accountDao.updateBalance(old.accountId, revertDelta)
+    val delta = if (updated.type == TransactionType.INCOME) updated.amount else -updated.amount
+    accountDao.updateBalance(updated.accountId, delta)
+  }
+
   suspend fun insertCategory(category: CategoryEntity) = withContext(Dispatchers.IO) {
     categoryDao.insertCategory(category)
   }

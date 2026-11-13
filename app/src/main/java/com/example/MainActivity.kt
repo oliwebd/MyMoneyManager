@@ -69,6 +69,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.model.SupportedLanguages
+import com.example.data.model.TransactionEntity
 import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.i18n.appStringsFor
 import com.example.ui.screens.AddTransactionSheet
@@ -249,6 +250,7 @@ fun MyMoneyManagerApp(
 
   var currentScreen by remember { mutableStateOf(AppScreen.DASHBOARD) }
   var showAddSheet by remember { mutableStateOf(false) }
+  var transactionToEdit by remember { mutableStateOf<TransactionEntity?>(null) }
   var showQuickAddModal by remember { mutableStateOf(false) }
   val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val snackbarHostState = remember { SnackbarHostState() }
@@ -441,6 +443,7 @@ fun MyMoneyManagerApp(
             selectedDateRange = filterDateRange,
             onDateRangeFilterChanged = { viewModel.setFilterDateRange(it) },
             onDeleteTransaction = { viewModel.deleteTransaction(it) },
+            onEditTransaction = { transactionToEdit = it },
             onOpenAddTransaction = { showAddSheet = true }
           )
         }
@@ -472,6 +475,10 @@ fun MyMoneyManagerApp(
             onCurrencySelected = { viewModel.setBaseCurrency(it) },
             currentLanguageCode = appLanguage,
             onLanguageSelected = { viewModel.setAppLanguage(it) },
+            categories = categories,
+            onSaveCategory = { viewModel.saveCategory(it) },
+            accounts = accounts,
+            onSaveAccount = { viewModel.saveAccount(it) },
             securityEnabled = securityEnabled,
             onToggleSecurity = { on, pin -> viewModel.toggleSecurity(on, pin) },
             biometricEnabled = biometricEnabled,
@@ -526,28 +533,48 @@ fun MyMoneyManagerApp(
       }
 
       // Add Transaction Sheet Modal
-      if (showAddSheet) {
+      if (showAddSheet || transactionToEdit != null) {
         AddTransactionSheet(
           sheetState = addSheetState,
           categories = categories,
           accounts = accounts,
           recentTitles = recentTitles,
           currencySymbol = viewModel.currencySymbol,
-          onDismiss = { showAddSheet = false },
-          onSave = { title, amount, type, categoryId, accountId, note, isRecurring, interval ->
-            viewModel.addTransaction(
-              title = title,
-              amount = amount,
-              type = type,
-              categoryId = categoryId,
-              accountId = accountId,
-              note = note,
-              isRecurring = isRecurring,
-              interval = interval
-            )
+          initialTransaction = transactionToEdit,
+          onDismiss = {
+            showAddSheet = false
+            transactionToEdit = null
+          },
+          onSave = { title, amount, type, categoryId, accountId, note, isRecurring, interval, timestamp ->
+            val editing = transactionToEdit
+            if (editing != null) {
+              viewModel.updateTransaction(
+                old = editing,
+                title = title,
+                amount = amount,
+                type = type,
+                categoryId = categoryId,
+                accountId = accountId,
+                note = note,
+                timestamp = timestamp
+              )
+            } else {
+              viewModel.addTransaction(
+                title = title,
+                amount = amount,
+                type = type,
+                categoryId = categoryId,
+                accountId = accountId,
+                note = note,
+                isRecurring = isRecurring,
+                interval = interval,
+                timestamp = timestamp
+              )
+            }
             coroutineScope.launch {
               addSheetState.hide()
               showAddSheet = false
+              transactionToEdit = null
             }
           }
         )

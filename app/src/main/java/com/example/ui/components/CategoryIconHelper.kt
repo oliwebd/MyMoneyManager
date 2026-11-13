@@ -20,6 +20,12 @@ import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object CategoryIconHelper {
+  val iconNames = listOf(
+    "shopping_cart", "restaurant", "directions_car", "home", "bolt", "movie", "local_hospital",
+    "shopping_bag", "payments", "work", "trending_up", "school", "flight", "account_balance",
+    "account_balance_wallet", "category"
+  )
+
   fun getIcon(iconName: String): ImageVector {
     return when (iconName.lowercase()) {
       "shopping_cart" -> Icons.Default.ShoppingCart

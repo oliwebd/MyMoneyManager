@@ -321,6 +321,49 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }
   }
 
+  fun updateTransaction(
+    old: TransactionEntity,
+    title: String,
+    amount: Double,
+    type: TransactionType,
+    categoryId: Long,
+    accountId: Long,
+    note: String,
+    timestamp: Long
+  ) {
+    viewModelScope.launch {
+      repository.updateTransaction(
+        old,
+        old.copy(
+          title = title.trim(),
+          amount = amount,
+          type = type,
+          categoryId = categoryId,
+          accountId = accountId,
+          timestamp = timestamp,
+          note = note.trim()
+        )
+      )
+      showMessage("Transaction updated.")
+    }
+  }
+
+  // Category and account CRUD
+  fun saveCategory(category: CategoryEntity) {
+    viewModelScope.launch {
+      // insertCategory uses REPLACE, so an existing id is updated in place
+      repository.insertCategory(category)
+      showMessage("Category saved.")
+    }
+  }
+
+  fun saveAccount(account: AccountEntity) {
+    viewModelScope.launch {
+      if (account.id == 0L) repository.insertAccount(account) else repository.updateAccount(account)
+      showMessage("Account saved.")
+    }
+  }
+
   // Budget CRUD
   fun setBudgetForCategory(categoryId: Long, limit: Double) {
     viewModelScope.launch {

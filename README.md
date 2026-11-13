@@ -10,9 +10,9 @@ Income and expense tracker for Android, built with Kotlin, Jetpack Compose and M
 
 ### Tracking
 
-- Add income and expenses with a title, amount, category, account and optional note.
-- Two entry points: a Quick Add dialog (dashboard button) and a full Add Transaction sheet with title suggestions and an optional recurring setting (weekly, monthly or yearly).
-- 12 default categories (8 expense, 4 income) and 4 default accounts: Cash Wallet, Main Bank Checking, Credit Card, Savings. Account balances change when a transaction is added or deleted.
+- Add income and expenses with a title, amount, category, account, date and optional note. Tap a transaction in the Transactions tab to edit it.
+- Two entry points: a Quick Add dialog (dashboard button, always dated now) and a full Add Transaction sheet with title suggestions, a date picker and an optional recurring setting (weekly, monthly or yearly).
+- 12 default categories (8 expense, 4 income) and 4 default accounts: Cash Wallet, Main Bank Checking, Credit Card, Savings. Account balances change when a transaction is added, edited or deleted. Categories and accounts can be added and edited from Vault.
 - Search by title, note, category or date. Filter by type, category and date range. Deleting asks for confirmation.
 
 ### Insights
@@ -131,10 +131,9 @@ Restore replaces all existing data. It also accepts files with the older headers
 
 Observed at commit `3dca4ae` by reading the code, not reproduced at runtime.
 
-- **Backups hold at most the 200 most recent transactions.** Restore clears existing data first, so older transactions are lost if you have more than 200.
 - Budgets are loaded for the month the app was started in. Selecting another month on the dashboard shows no budgets for it.
 - Recurring transactions only create a reminder banner on the dashboard. Nothing schedules reminder notifications or posts the next transaction.
-- Transactions cannot be edited (delete and re-add) and are stamped with the current time. Categories and accounts cannot be added or edited in the UI.
+- Quick Add always stamps the current time. Editing a transaction cannot change its recurring setting, and categories and accounts cannot be deleted.
 - Account balances are tracked but not displayed anywhere in the UI.
 - Some dialogs, messages and notifications are English only.
 

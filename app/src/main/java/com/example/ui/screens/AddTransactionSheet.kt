@@ -31,11 +31,14 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +49,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -68,14 +73,19 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.AccountEntity
 import com.example.data.model.CategoryEntity
 import com.example.data.model.RecurringInterval
+import com.example.data.model.TransactionEntity
 import com.example.data.model.TransactionType
 import com.example.ui.components.AutoSuggestTextField
 import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.TouchAdjustmentScroller
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.IncomeGreen
 import com.example.ui.theme.expenseColors
 import com.example.ui.theme.incomeColors
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +95,7 @@ fun AddTransactionSheet(
   accounts: List<AccountEntity>,
   recentTitles: List<String>,
   currencySymbol: String,
+  initialTransaction: TransactionEntity? = null,
   onDismiss: () -> Unit,
   onSave: (
     title: String,
@@ -94,23 +105,29 @@ fun AddTransactionSheet(
     accountId: Long,
     note: String,
     isRecurring: Boolean,
-    interval: RecurringInterval
+    interval: RecurringInterval,
+    timestamp: Long
   ) -> Unit
 ) {
-  var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
-  var title by remember { mutableStateOf("") }
-  var amountText by remember { mutableStateOf("0.00") }
-  var amountValue by remember { mutableDoubleStateOf(0.0) }
+  val strings = LocalAppStrings.current
+  var selectedType by remember { mutableStateOf(initialTransaction?.type ?: TransactionType.EXPENSE) }
+  var title by remember { mutableStateOf(initialTransaction?.title ?: "") }
+  var amountText by remember { mutableStateOf(initialTransaction?.let { String.format("%.2f", it.amount) } ?: "0.00") }
+  var amountValue by remember { mutableDoubleStateOf(initialTransaction?.amount ?: 0.0) }
 
   var selectedCategoryId by remember(categories, selectedType) {
     val filtered = categories.filter { if (selectedType == TransactionType.EXPENSE) it.isExpense else !it.isExpense }
-    mutableLongStateOf(filtered.firstOrNull()?.id ?: 1L)
+    mutableLongStateOf(filtered.find { it.id == initialTransaction?.categoryId }?.id ?: filtered.firstOrNull()?.id ?: 1L)
   }
   var selectedAccountId by remember(accounts) {
-    val defaultAcc = accounts.find { it.name.contains("Bank", ignoreCase = true) } ?: accounts.firstOrNull()
+    val defaultAcc = accounts.find { it.id == initialTransaction?.accountId }
+      ?: accounts.find { it.name.contains("Bank", ignoreCase = true) }
+      ?: accounts.firstOrNull()
     mutableLongStateOf(defaultAcc?.id ?: 1L)
   }
-  var note by remember { mutableStateOf("") }
+  var note by remember { mutableStateOf(initialTransaction?.note ?: "") }
+  var timestamp by remember { mutableLongStateOf(initialTransaction?.timestamp ?: System.currentTimeMillis()) }
+  var showDatePicker by remember { mutableStateOf(false) }
   var isRecurring by remember { mutableStateOf(false) }
   var recurringInterval by remember { mutableStateOf(RecurringInterval.MONTHLY) }
 
@@ -459,78 +476,88 @@ fun AddTransactionSheet(
 
           Spacer(modifier = Modifier.height(12.dp))
 
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth()
           ) {
-            accounts.forEach { account ->
-              val isSelected = selectedAccountId == account.id
-              val isBank = account.name.contains("Bank", ignoreCase = true)
-              val accIcon = if (isBank) Icons.Default.AccountBalance else Icons.Default.AccountBalanceWallet
-
-              Box(
-                modifier = Modifier
-                  .weight(1f)
-                  .height(48.dp)
+            accounts.chunked(2).forEach { pair ->
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
               ) {
-                Box(
-                  modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                      if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surface
-                    )
-                    .then(
-                      if (isSelected) {
-                        Modifier.border(
-                          width = 1.8.dp,
-                          color = accentColor,
-                          shape = RoundedCornerShape(24.dp)
-                        )
-                      } else Modifier
-                    )
-                    .clickable { selectedAccountId = account.id }
-                    .padding(horizontal = 12.dp),
-                  contentAlignment = Alignment.Center
-                ) {
-                  Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                  ) {
-                    Icon(
-                      imageVector = accIcon,
-                      contentDescription = null,
-                      tint = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
-                      modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                      text = account.name,
-                      style = MaterialTheme.typography.labelMedium,
-                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                      color = MaterialTheme.colorScheme.onSurface,
-                      maxLines = 1
-                    )
-                  }
-                }
+                pair.forEach { account ->
+                  val isSelected = selectedAccountId == account.id
+                  val isBank = account.name.contains("Bank", ignoreCase = true)
+                  val accIcon = if (isBank) Icons.Default.AccountBalance else Icons.Default.AccountBalanceWallet
 
-                if (isSelected) {
                   Box(
                     modifier = Modifier
-                      .align(Alignment.TopEnd)
-                      .offset(x = 2.dp, y = (-2).dp)
-                      .size(18.dp)
-                      .clip(CircleShape)
-                      .background(fillColor),
-                    contentAlignment = Alignment.Center
+                      .weight(1f)
+                      .height(48.dp)
                   ) {
-                    Icon(
-                      imageVector = Icons.Default.Check,
-                      contentDescription = null,
-                      tint = Color.White,
-                      modifier = Modifier.size(12.dp)
-                    )
+                    Box(
+                      modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                          if (isSelected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surface
+                        )
+                        .then(
+                          if (isSelected) {
+                            Modifier.border(
+                              width = 1.8.dp,
+                              color = accentColor,
+                              shape = RoundedCornerShape(24.dp)
+                            )
+                          } else Modifier
+                        )
+                        .clickable { selectedAccountId = account.id }
+                        .padding(horizontal = 12.dp),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                      ) {
+                        Icon(
+                          imageVector = accIcon,
+                          contentDescription = null,
+                          tint = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
+                          modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                          text = account.name,
+                          style = MaterialTheme.typography.labelMedium,
+                          fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                          color = MaterialTheme.colorScheme.onSurface,
+                          maxLines = 1
+                        )
+                      }
+                    }
+
+                    if (isSelected) {
+                      Box(
+                        modifier = Modifier
+                          .align(Alignment.TopEnd)
+                          .offset(x = 2.dp, y = (-2).dp)
+                          .size(18.dp)
+                          .clip(CircleShape)
+                          .background(fillColor),
+                        contentAlignment = Alignment.Center
+                      ) {
+                        Icon(
+                          imageVector = Icons.Default.Check,
+                          contentDescription = null,
+                          tint = Color.White,
+                          modifier = Modifier.size(12.dp)
+                        )
+                      }
+                    }
                   }
+                }
+                if (pair.size == 1) {
+                  Spacer(modifier = Modifier.weight(1f))
                 }
               }
             }
@@ -540,8 +567,40 @@ fun AddTransactionSheet(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // 6. RECURRING TRANSACTION
+      // DATE
       Card(
+        onClick = { showDatePicker = true },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("transaction_date_field")
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Icon(
+            imageVector = Icons.Default.DateRange,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+          )
+          Spacer(modifier = Modifier.width(12.dp))
+          Text(
+            text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(timestamp)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(14.dp))
+
+      // 6. RECURRING TRANSACTION
+      if (initialTransaction == null) Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
@@ -692,7 +751,8 @@ fun AddTransactionSheet(
               selectedAccountId,
               note,
               isRecurring,
-              recurringInterval
+              recurringInterval,
+              timestamp
             )
           }
           .testTag("save_transaction_button"),
@@ -719,6 +779,33 @@ fun AddTransactionSheet(
       }
 
       Spacer(modifier = Modifier.height(32.dp))
+    }
+  }
+
+  if (showDatePicker) {
+    val datePickerState = rememberDatePickerState(
+      initialSelectedDateMillis = localMillisToUtcDateMillis(timestamp)
+    )
+    DatePickerDialog(
+      onDismissRequest = { showDatePicker = false },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            datePickerState.selectedDateMillis?.let { timestamp = utcDateMillisToLocalMillis(it, timestamp) }
+            showDatePicker = false
+          },
+          modifier = Modifier.testTag("confirm_transaction_date_button")
+        ) {
+          Text(strings.ok)
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDatePicker = false }) {
+          Text(strings.cancel)
+        }
+      }
+    ) {
+      DatePicker(state = datePickerState)
     }
   }
 }

@@ -152,6 +152,24 @@ internal fun localMillisToUtcDateMillis(
   }.timeInMillis
 }
 
+internal fun utcDateMillisToLocalMillis(
+  utcDateMillis: Long,
+  timeOfDayFromMillis: Long,
+  localTimeZone: TimeZone = TimeZone.getDefault()
+): Long {
+  val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+    timeInMillis = utcDateMillis
+  }
+  return Calendar.getInstance(localTimeZone).apply {
+    timeInMillis = timeOfDayFromMillis
+    set(
+      utcCal.get(Calendar.YEAR),
+      utcCal.get(Calendar.MONTH),
+      utcCal.get(Calendar.DAY_OF_MONTH)
+    )
+  }.timeInMillis
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
@@ -167,6 +185,7 @@ fun TransactionsScreen(
   selectedDateRange: Pair<Long, Long>? = null,
   onDateRangeFilterChanged: (Pair<Long, Long>?) -> Unit = {},
   onDeleteTransaction: (TransactionEntity) -> Unit,
+  onEditTransaction: (TransactionEntity) -> Unit,
   onOpenAddTransaction: () -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -389,7 +408,8 @@ fun TransactionsScreen(
               categories = categories,
               currencySymbol = currencySymbol,
               showTime = true,
-              onDelete = { transactionToDelete = item }
+              onDelete = { transactionToDelete = item },
+              onClick = { onEditTransaction(item) }
             )
           }
 

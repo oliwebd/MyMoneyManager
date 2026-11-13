@@ -28,7 +28,7 @@ Data flow: Room DAO `Flow` -> `FinanceRepository` -> `FinanceViewModel` (`StateF
 - `MainActivity.kt`: `MainActivity` is a `FragmentActivity` (required by `BiometricPrompt`), sets `FLAG_SECURE`, and calls `lockApp()` in `onStop` unless the configuration is changing. `MyMoneyManagerApp` gates on setup, then lock, then shows a `Scaffold` with four tabs chosen by the `AppScreen` enum and a `when`.
 - `data/model`: entities `TransactionEntity`, `CategoryEntity`, `MonthlyBudgetEntity`, `AccountEntity`, `RecurringAlertEntity`; enums; `SupportedCurrencies` (57) and `SupportedLanguages` (23).
 - `data/database/AppDatabase.kt`: database `m3note_db`. Seeds 12 categories (ids 1 to 12) and 4 accounts (ids 1 to 4) in `onCreate`.
-- `data/repository/FinanceRepository.kt`: transaction insert and delete with account balance updates, budget alert check, backup create and restore, clear data.
+- `data/repository/FinanceRepository.kt`: transaction insert, update and delete with account balance updates, budget alert check, backup create and restore, clear data.
 - `data/crypto/CryptoManager.kt`: AES-256-GCM backup encryption and hand-written `org.json` (de)serialization.
 - `security/SecurityPreferences.kt`: SharedPreferences file `m3note_security_prefs` (PIN hash, lockout, base currency, language, toggles).
 - `notification/NotificationHelper.kt`: channels `budget_alerts_channel` and `recurring_alerts_channel`.
@@ -87,26 +87,25 @@ Security
 
 - Month keys are `"yyyy-MM"` strings from `SimpleDateFormat` with `Locale.getDefault()`, repeated in several files. The ViewModel calls `Locale.setDefault` on language change, so formatting depends on it.
 - Amounts are `Double`. Each transaction stores the base currency code at insert time and there is no conversion.
-- Account balances change only through `FinanceRepository.insertTransaction` and `deleteTransaction`. Route any new insert or delete path through them. Restore writes the backed-up balances as they are.
+- Account balances change only through `FinanceRepository.insertTransaction`, `updateTransaction` and `deleteTransaction`. Route any new insert or delete path through them. Restore writes the backed-up balances as they are.
 - New UI text goes into `AppStrings` (English default) and the other 22 branches of `appStringsFor`. A locale that omits a key falls back to English. Many dialogs, ViewModel messages and notifications are still hardcoded English.
-- Pure screen logic is exposed as `internal` top-level functions so it can be unit tested without Compose (`filterTransactions`, `sanitizeQuickAddAmountInput`, `parseQuickAddAmount`, `resolveQuickAddTitle`). Follow that pattern only when logic needs a test.
+- Pure screen logic is exposed as `internal` top-level functions so it can be unit tested without Compose (`filterTransactions`, `utcDateMillisToLocalMillis`, `sanitizeQuickAddAmountInput`, `parseQuickAddAmount`, `resolveQuickAddTitle`). Follow that pattern only when logic needs a test.
 - The add flows preselect the account whose name contains "Bank", otherwise the first account.
 
 ## Known issues
 
 Observed at commit `3dca4ae` by reading the code. Not reproduced at runtime. Fix only when asked, and update this list when one is fixed.
 
-1. **Backup truncation (data loss).** `TransactionDao.getAllTransactionsSnapshot()` has `LIMIT 200` and feeds `createEncryptedBackupFile`. `restoreEncryptedBackup` clears all tables first, so restoring a backup made with more than 200 transactions drops the older ones. The same snapshot feeds `checkAndTriggerBudgetAlert`, so its spent total sees only the latest 200.
-2. **Budgets ignore the selected month.** `FinanceViewModel.monthlyBudgets` calls `getBudgetsForMonth(getCurrentMonthYear())` once when the ViewModel is created. Budgets for other months do not load, and one saved while another month is selected is not shown.
-3. **Recurring reminders never fire.** `sendRecurringBillReminder` is only called from the Vault test button and `sendMilestoneNotification` has no caller. Nothing calls `updateAlert` or `deleteAlert`, so alerts are never advanced or deactivated, and the dashboard banner shows only `activeAlerts.first()`.
-4. **Restore is not atomic.** `restoreEncryptedBackup` clears and refills tables without a Room transaction, so a failure part-way leaves partial data.
-5. **Missing flows.** Nothing calls `updateTransaction` (no edit), the add sheet has no date field (the timestamp is "now"), and `insertCategory` and `insertAccount` have no callers. `DashboardScreen` receives `accounts` but no screen reads balances, so they are never shown.
-6. **Thresholds differ.** The UI warns from 75% and flags over budget at 100%. Notifications fire at 80% and above.
+1. **Budgets ignore the selected month.** `FinanceViewModel.monthlyBudgets` calls `getBudgetsForMonth(getCurrentMonthYear())` once when the ViewModel is created. Budgets for other months do not load, and one saved while another month is selected is not shown.
+2. **Recurring reminders never fire.** `sendRecurringBillReminder` is only called from the Vault test button and `sendMilestoneNotification` has no caller. Nothing calls `updateAlert` or `deleteAlert`, so alerts are never advanced or deactivated, and the dashboard banner shows only `activeAlerts.first()`.
+3. **Restore is not atomic.** `restoreEncryptedBackup` clears and refills tables without a Room transaction, so a failure part-way leaves partial data.
+4. **Missing flows.** `DashboardScreen` receives `accounts` but no screen reads balances, so they are never shown. Quick Add always uses the current time, the edit sheet hides the recurring setting, and categories and accounts cannot be deleted.
+5. **Thresholds differ.** The UI warns from 75% and flags over budget at 100%. Notifications fire at 80% and above.
 
 ## Tests
 
 - `SecurityPreferencesTest`: PIN hashing, lockout, legacy hash migration, currency and language persistence.
-- `TransactionsFilterTest`: search and filters, UTC to local date range conversion.
+- `TransactionsFilterTest`: search and filters, UTC to local date range conversion, date picker to local timestamp conversion.
 - `QuickAddTransactionHelperTest`: amount sanitizing and parsing, title fallback.
 - `ExampleUnitTest.testAllSupportedLanguagesHaveTranslations`: checks a few keys per language. `testAes256GcmCryptoAlgorithm` repeats the JCA steps inline and does not call `CryptoManager`.
 - `ExampleRobolectricTest`, `ExampleUnitTest.addition_isCorrect` and `ExampleInstrumentedTest` are template placeholders.
