@@ -1,6 +1,6 @@
 # M3Note (MyMoneyManager)
 
-Offline-first income and expense tracker for Android, built with Kotlin, Jetpack Compose and Material 3. Data lives in a local Room database, the app locks behind a PIN or biometrics, and backups are encrypted on the device before they are shared.
+Income and expense tracker for Android, built with Kotlin, Jetpack Compose and Material 3. Data lives in a local Room database, the app locks behind a PIN or biometrics, and backups are encrypted on the device before they are shared.
 
 - App name: M3Note (repository: `MyMoneyManager`)
 - Application ID: `com.aistudio.pocketsense.kxvtqa`, Kotlin package: `com.example`
